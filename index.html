@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calcolatrice Oraria</title>
+<style>
+  :root{
+    --bg:#f4f5f7; --card:#ffffff; --ink:#15181d; --muted:#697386;
+    --line:#e3e6ec; --accent:#2f6df6;
+    --ok:#1f8a4c; --ok-soft:#e4f5eb; --warn:#a4690a; --warn-soft:#fdf1dc;
+    --radius:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#111318; --card:#1a1d24; --ink:#eef1f6; --muted:#98a1b3;
+      --line:#2a2f39; --accent:#6d9bff;
+      --ok:#5fd08c; --ok-soft:#12301f; --warn:#e8b45c; --warn-soft:#332612;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:24px 16px 48px; background:var(--bg); color:var(--ink);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:520px; margin:0 auto; display:flex; flex-direction:column; gap:16px}
+  header h1{margin:0; font-size:22px; letter-spacing:-.02em}
+  header p{margin:4px 0 0; color:var(--muted); font-size:14px}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px}
+  .field{display:flex; flex-direction:column; gap:7px}
+  .field + .field{margin-top:18px}
+  label{font-size:13px; font-weight:600; color:var(--muted); letter-spacing:.01em}
+  input[type=time], input[type=number]{
+    font:inherit; color:var(--ink); background:var(--bg);
+    border:1px solid var(--line); border-radius:10px; padding:11px 12px; width:100%;
+  }
+  input[type=time]{font-size:20px; font-variant-numeric:tabular-nums; font-weight:600}
+  input:focus{outline:2px solid var(--accent); outline-offset:1px; border-color:transparent}
+
+  .seg{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; background:var(--bg);
+       border:1px solid var(--line); border-radius:11px; padding:4px}
+  .seg input{position:absolute; opacity:0; pointer-events:none}
+  .seg label{
+    display:block; text-align:center; padding:9px 2px; border-radius:8px; cursor:pointer;
+    font-size:13px; font-weight:600; color:var(--muted); user-select:none; transition:.12s;
+  }
+  .seg input:checked + label{background:var(--accent); color:#fff}
+  .seg input:focus-visible + label{outline:2px solid var(--accent); outline-offset:2px}
+
+  .out{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+  .out-main{padding:20px 18px; display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap}
+  .out-main .k{font-size:13px; font-weight:600; color:var(--muted)}
+  .out-main .v{font-size:38px; font-weight:700; letter-spacing:-.03em; font-variant-numeric:tabular-nums; line-height:1}
+  .out-main .v small{font-size:15px; font-weight:600; color:var(--muted); margin-left:6px}
+  .out-main .v .empty{font-size:19px; font-weight:600; color:var(--muted); letter-spacing:0}
+
+  .stats{display:grid; grid-template-columns:repeat(3,1fr); border-top:1px solid var(--line)}
+  .stat{padding:13px 14px; border-right:1px solid var(--line)}
+  .stat:last-child{border-right:0}
+  .stat .k{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700}
+  .stat .v{font-size:16px; font-weight:650; font-variant-numeric:tabular-nums; margin-top:3px}
+
+  .buono{display:flex; align-items:center; gap:10px; padding:14px 18px; border-top:1px solid var(--line); font-weight:600}
+  .buono .dot{width:9px; height:9px; border-radius:50%; flex:none}
+  .buono .amt{margin-left:auto; font-variant-numeric:tabular-nums}
+  .buono.full{background:var(--ok-soft); color:var(--ok)}
+  .buono.full .dot{background:var(--ok)}
+  .buono.part{background:var(--warn-soft); color:var(--warn)}
+  .buono.part .dot{background:var(--warn)}
+  .buono.none{color:var(--muted)}
+  .buono.none .dot{background:var(--muted)}
+
+  .soglie{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px 18px}
+  .soglie h2{margin:0 0 6px; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted)}
+  .row{display:flex; align-items:center; gap:10px; padding:8px 0; font-size:14px}
+  .row + .row{border-top:1px dashed var(--line)}
+  .row .t{margin-left:auto; font-weight:700; font-variant-numeric:tabular-nums}
+  .row.hit{color:var(--ok)}
+
+  .note{color:var(--muted); font-size:12.5px; line-height:1.6; padding:0 4px; margin:0}
+  .note b{color:var(--ink); font-weight:600}
+</style>
+</head>
+<body>
+<main class="app">
+
+  <header>
+    <h1>Calcolatrice Oraria</h1>
+    <p>Orario di uscita e buono pasto</p>
+  </header>
+
+  <section class="card">
+    <div class="field">
+      <label for="ingresso">Orario di ingresso</label>
+      <input type="time" id="ingresso" value="08:30" step="60">
+    </div>
+
+    <div class="field">
+      <label>Calcolo</label>
+      <div class="seg">
+        <input type="radio" name="modo" id="m6" value="360" checked><label for="m6">Corta</label>
+        <input type="radio" name="modo" id="m7" value="420"><label for="m7">BP parziale</label>
+        <input type="radio" name="modo" id="m9" value="540"><label for="m9">BP completo</label>
+      </div>
+    </div>
+  </section>
+
+  <section class="out">
+    <div class="out-main">
+      <span class="k">Orario di uscita</span>
+      <span class="v" id="uscita">--:--</span>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="k">Permanenza</div><div class="v" id="permanenza">&mdash;</div></div>
+      <div class="stat"><div class="k">Lavoro eff.</div><div class="v" id="lavoro">&mdash;</div></div>
+      <div class="stat"><div class="k">Pausa</div><div class="v" id="pausa">&mdash;</div></div>
+    </div>
+    <div class="buono none" id="buono">
+      <span class="dot"></span><span id="buonoTxt">Nessun buono pasto</span><span class="amt" id="buonoAmt"></span>
+    </div>
+  </section>
+
+  <section class="soglie">
+    <h2>Soglie buono pasto</h2>
+    <div class="row" id="rowP">
+      <span>Parziale &middot; 7:00 di lavoro &middot; 5,60 &euro;</span>
+      <span class="t" id="tParziale">--:--</span>
+    </div>
+    <div class="row" id="rowC">
+      <span>Completo &middot; 9:00 di lavoro &middot; 7,00 &euro;</span>
+      <span class="t" id="tCompleto">--:--</span>
+    </div>
+  </section>
+
+  <p class="note">
+    <b>Pausa pranzo:</b> raggiunte le <b>6:30</b> di permanenza, 30 minuti vengono scalati e non
+    contano come lavoro. Fino a 6:29 la permanenza vale interamente come lavoro effettivo.
+  </p>
+
+</main>
+
+<script>
+(function(){
+  var PAUSA = 30;          // minuti scalati per la pausa pranzo
+  var SOGLIA_PAUSA = 390;  // 6:30 di permanenza
+  var T_PARZIALE = 420;    // 7:00 di lavoro effettivo -> 5,60 EUR
+  var T_COMPLETO = 540;    // 9:00 di lavoro effettivo -> 7,00 EUR
+
+  function el(id){ return document.getElementById(id); }
+  var ingresso = el('ingresso');
+
+  function parseOra(v){
+    var m = /^(\d{1,2}):(\d{2})$/.exec(v || '');
+    if(!m){ return null; }
+    var h = +m[1], mi = +m[2];
+    if(h > 23 || mi > 59){ return null; }
+    return h * 60 + mi;
+  }
+
+  function pad(n){ return n < 10 ? '0' + n : '' + n; }
+
+  function fmtOra(min){
+    var g = Math.floor(min / 1440);
+    var t = ((min % 1440) + 1440) % 1440;
+    var s = pad(Math.floor(t / 60)) + ':' + pad(t % 60);
+    return g > 0 ? s + '<small>+' + g + 'g</small>' : s;
+  }
+
+  function fmtDurata(min){
+    return Math.floor(min / 60) + ':' + pad(min % 60);
+  }
+
+  // permanenza -> lavoro effettivo
+  function lavoroDa(p){ return p >= SOGLIA_PAUSA ? p - PAUSA : p; }
+
+  // lavoro effettivo desiderato -> permanenza necessaria
+  function permanenzaPer(l){ return l < SOGLIA_PAUSA ? l : l + PAUSA; }
+
+  // minuti di lavoro effettivo del preset selezionato
+  function targetLavoro(){
+    return +document.querySelector('input[name=modo]:checked').value;
+  }
+
+  function calcola(){
+    var start = parseOra(ingresso.value);
+    var lav = targetLavoro();
+    var perm = permanenzaPer(lav);
+    var pausa = perm - lav;
+
+    el('permanenza').textContent = fmtDurata(perm);
+    el('lavoro').textContent     = fmtDurata(lav);
+    el('pausa').textContent      = pausa ? '−' + pausa + 'm' : '—';
+
+    var completo = lav >= T_COMPLETO, parziale = lav >= T_PARZIALE;
+    el('buono').className = 'buono ' + (completo ? 'full' : parziale ? 'part' : 'none');
+    el('buonoTxt').textContent = completo ? 'Buono pasto completo'
+                               : parziale ? 'Buono pasto parziale'
+                               : 'Nessun buono pasto';
+    el('buonoAmt').textContent = completo ? '7,00 €' : parziale ? '5,60 €' : '';
+
+    el('rowP').classList.toggle('hit', parziale);
+    el('rowC').classList.toggle('hit', completo);
+
+    if(start === null){
+      el('uscita').innerHTML = '<span class="empty">orario non valido</span>';
+      el('tParziale').textContent = '--:--';
+      el('tCompleto').textContent = '--:--';
+      return;
+    }
+
+    el('uscita').innerHTML = fmtOra(start + perm);
+    el('tParziale').innerHTML = fmtOra(start + permanenzaPer(T_PARZIALE));
+    el('tCompleto').innerHTML = fmtOra(start + permanenzaPer(T_COMPLETO));
+  }
+
+  document.addEventListener('input', calcola);
+  document.addEventListener('change', calcola);
+  calcola();
+})();
+</script>
+</body>
+</html>
