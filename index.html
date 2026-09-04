@@ -30,6 +30,7 @@
 
   .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px}
   .field{display:flex; flex-direction:column; gap:7px}
+  .field[hidden]{display:none}
   .field + .field{margin-top:18px}
   label{font-size:13px; font-weight:600; color:var(--muted); letter-spacing:.01em}
   input[type=time], input[type=number]{
@@ -43,11 +44,37 @@
        border:1px solid var(--line); border-radius:11px; padding:4px}
   .seg input{position:absolute; opacity:0; pointer-events:none}
   .seg label{
+    position:relative;
     display:block; text-align:center; padding:9px 2px; border-radius:8px; cursor:pointer;
     font-size:13px; font-weight:600; color:var(--muted); user-select:none; transition:.12s;
   }
   .seg input:checked + label{background:var(--accent); color:#fff}
   .seg input:focus-visible + label{outline:2px solid var(--accent); outline-offset:2px}
+  .seg label.wide{grid-column:1/-1}
+
+  /* separatore verticale nello spazio tra un tasto e l'altro */
+  .seg label::before{
+    content:''; position:absolute; left:-3.5px; top:22%; bottom:22%;
+    width:1px; background:var(--line); transition:opacity .12s;
+  }
+  .seg label:first-of-type::before,               /* primo tasto della riga */
+  .seg input:checked + label::before,             /* accanto al tasto attivo */
+  .seg input:checked + label + input + label:not(.wide)::before{opacity:0}
+
+  /* il tasto a tutta larghezza sta su una riga a se: separatore orizzontale sopra */
+  .seg label.wide::before{
+    left:5%; right:5%; top:-3.5px; bottom:auto; width:auto; height:1px; opacity:1;
+  }
+
+  .custom{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .custom .u{position:relative}
+  .custom .u span{
+    position:absolute; right:12px; top:50%; transform:translateY(-50%);
+    font-size:12px; font-weight:600; color:var(--muted); pointer-events:none;
+  }
+  .custom input{padding-right:46px; font-variant-numeric:tabular-nums; -moz-appearance:textfield}
+  .custom input::-webkit-outer-spin-button,
+  .custom input::-webkit-inner-spin-button{-webkit-appearance:none; margin:0}
 
   .out{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
   .out-main{padding:20px 18px; display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap}
@@ -103,6 +130,15 @@
         <input type="radio" name="modo" id="m6" value="360" checked><label for="m6">Corta</label>
         <input type="radio" name="modo" id="m7" value="420"><label for="m7">BP parziale</label>
         <input type="radio" name="modo" id="m9" value="540"><label for="m9">BP completo</label>
+        <input type="radio" name="modo" id="mx" value="custom"><label for="mx" class="wide">Personalizzato</label>
+      </div>
+    </div>
+
+    <div class="field" id="fCustom" hidden>
+      <label for="cOre">Ore di lavoro da calcolare</label>
+      <div class="custom">
+        <div class="u"><input type="number" id="cOre" value="8" min="0" max="23" step="1" inputmode="numeric"><span>ore</span></div>
+        <div class="u"><input type="number" id="cMin" value="0" min="0" max="59" step="5" inputmode="numeric"><span>min</span></div>
       </div>
     </div>
   </section>
@@ -178,13 +214,29 @@
   // lavoro effettivo desiderato -> permanenza necessaria
   function permanenzaPer(l){ return l < SOGLIA_PAUSA ? l : l + PAUSA; }
 
-  // minuti di lavoro effettivo del preset selezionato
+  function clamp(n, min, max){
+    if(!isFinite(n)){ return min; }
+    return n < min ? min : n > max ? max : n;
+  }
+
+  // minuti di lavoro effettivo digitati nel calcolo personalizzato
+  function lavoroCustom(){
+    var o = clamp(Math.floor(+el('cOre').value || 0), 0, 23);
+    var m = clamp(Math.floor(+el('cMin').value || 0), 0, 59);
+    return o * 60 + m;
+  }
+
+  // minuti di lavoro effettivo della modalita selezionata
   function targetLavoro(){
-    return +document.querySelector('input[name=modo]:checked').value;
+    var sel = document.querySelector('input[name=modo]:checked');
+    return sel.value === 'custom' ? lavoroCustom() : +sel.value;
   }
 
   function calcola(){
     var start = parseOra(ingresso.value);
+    var custom = document.querySelector('input[name=modo]:checked').value === 'custom';
+    el('fCustom').hidden = !custom;
+
     var lav = targetLavoro();
     var perm = permanenzaPer(lav);
     var pausa = perm - lav;
@@ -217,6 +269,11 @@
 
   document.addEventListener('input', calcola);
   document.addEventListener('change', calcola);
+  el('mx').addEventListener('change', function(){
+    calcola();                       // mostra il campo prima di dargli il focus
+    el('cOre').focus();
+    el('cOre').select();
+  });
   calcola();
 })();
 </script>
