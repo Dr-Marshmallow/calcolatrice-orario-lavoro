@@ -10,6 +10,9 @@ La pagina ha due tab:
 - **Straordinario** - dato ingresso, uscita e turno teorico, dice quanto straordinario
   si e maturato.
 
+L'**orario di ingresso e condiviso fra i due tab**: si digita una volta sola e resta
+lo stesso passando dall'uno all'altro.
+
 ## Uso
 
 Apri `index.html` in un qualsiasi browser. Non serve installare nulla, non serve un
@@ -49,7 +52,8 @@ quindi il risultato mostrato e sempre valido.
 Serve a fare il conto a posteriori: hai gia timbrato entrata e uscita e vuoi sapere
 quanto hai fatto in piu (o in meno) rispetto al turno che avresti dovuto fare.
 
-1. Inserisci l'**orario di ingresso** e l'**orario di uscita** effettivi.
+1. Inserisci l'**orario di ingresso** (lo stesso del tab "Uscita") e l'**orario di
+   uscita** effettivi.
 2. Scegli il **turno teorico**:
 
    | Pulsante | Lavoro effettivo | Permanenza in sede |
@@ -135,7 +139,8 @@ Di conseguenza, per maturare *N* ore di lavoro effettivo (con *N* maggiore o ugu
   - `lavoroCustom()`: legge e normalizza ore e minuti del calcolo personalizzato;
   - `calcola()`: aggiorna il tab "Uscita";
   - `calcolaStraordinario()`: aggiorna il tab "Straordinario";
-  - `aggiorna()`: mostra il tab attivo e ricalcola entrambi a ogni modifica.
+  - `aggiorna()`: mostra il tab attivo e ricalcola entrambi a ogni modifica;
+  - `rispecchia(da, a)`: tiene allineati i due campi dell'orario di ingresso.
 
 ## Struttura del progetto
 

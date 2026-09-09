@@ -412,6 +412,16 @@
     calcolaStraordinario();
   }
 
+  // l'orario di ingresso e unico: quello digitato in un tab vale anche per l'altro.
+  // Questi handler sono sull'elemento, quindi girano prima di aggiorna() sul document.
+  function rispecchia(da, a){
+    return function(){ el(a).value = el(da).value; };
+  }
+  ['input', 'change'].forEach(function(ev){
+    el('ingresso').addEventListener(ev, rispecchia('ingresso', 'sIngresso'));
+    el('sIngresso').addEventListener(ev, rispecchia('sIngresso', 'ingresso'));
+  });
+
   document.addEventListener('input', aggiorna);
   document.addEventListener('change', aggiorna);
   el('mx').addEventListener('change', function(){
