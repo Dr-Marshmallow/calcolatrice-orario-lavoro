@@ -52,6 +52,19 @@
   .seg input:focus-visible + label{outline:2px solid var(--accent); outline-offset:2px}
   .seg label.wide{grid-column:1/-1}
 
+  .tabs{display:grid; grid-template-columns:repeat(2,1fr); gap:6px; background:var(--card);
+        border:1px solid var(--line); border-radius:11px; padding:4px}
+  .tabs input{position:absolute; opacity:0; pointer-events:none}
+  .tabs label{
+    display:block; text-align:center; padding:10px 2px; border-radius:8px; cursor:pointer;
+    font-size:14px; font-weight:600; color:var(--muted); user-select:none; transition:.12s;
+  }
+  .tabs input:checked + label{background:var(--accent); color:#fff}
+  .tabs input:focus-visible + label{outline:2px solid var(--accent); outline-offset:2px}
+
+  .panel{display:flex; flex-direction:column; gap:16px}
+  .panel[hidden]{display:none}
+
   /* separatore verticale nello spazio tra un tasto e l'altro */
   .seg label::before{
     content:''; position:absolute; left:-3.5px; top:22%; bottom:22%;
@@ -82,6 +95,8 @@
   .out-main .v{font-size:38px; font-weight:700; letter-spacing:-.03em; font-variant-numeric:tabular-nums; line-height:1}
   .out-main .v small{font-size:15px; font-weight:600; color:var(--muted); margin-left:6px}
   .out-main .v .empty{font-size:19px; font-weight:600; color:var(--muted); letter-spacing:0}
+  .out-main .v.pos{color:var(--ok)}
+  .out-main .v.neg{color:var(--warn)}
 
   .stats{display:grid; grid-template-columns:repeat(3,1fr); border-top:1px solid var(--line)}
   .stat{padding:13px 14px; border-right:1px solid var(--line)}
@@ -115,8 +130,15 @@
 
   <header>
     <h1>Calcolatrice Oraria</h1>
-    <p>Orario di uscita e buono pasto</p>
+    <p>Orario di uscita, straordinario e buono pasto</p>
   </header>
+
+  <div class="tabs">
+    <input type="radio" name="tab" id="tab1" checked><label for="tab1">Uscita</label>
+    <input type="radio" name="tab" id="tab2"><label for="tab2">Straordinario</label>
+  </div>
+
+  <div class="panel" id="panel1">
 
   <section class="card">
     <div class="field">
@@ -169,6 +191,64 @@
       <span class="t" id="tCompleto">--:--</span>
     </div>
   </section>
+
+  </div><!-- /panel1 -->
+
+  <div class="panel" id="panel2" hidden>
+
+    <section class="card">
+      <div class="field">
+        <label for="sIngresso">Orario di ingresso</label>
+        <input type="time" id="sIngresso" value="08:00" step="60">
+      </div>
+
+      <div class="field">
+        <label for="sUscita">Orario di uscita</label>
+        <input type="time" id="sUscita" value="17:30" step="60">
+      </div>
+
+      <div class="field">
+        <label>Turno teorico</label>
+        <div class="seg">
+          <input type="radio" name="turno" id="t6" value="360"><label for="t6">Corta</label>
+          <input type="radio" name="turno" id="t712" value="432"><label for="t712">7:12</label>
+          <input type="radio" name="turno" id="t9" value="540" checked><label for="t9">Lunga</label>
+        </div>
+      </div>
+    </section>
+
+    <section class="out">
+      <div class="out-main">
+        <span class="k">Straordinario</span>
+        <span class="v" id="sExtra">--:--</span>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">Permanenza</div><div class="v" id="sPermanenza">&mdash;</div></div>
+        <div class="stat"><div class="k">Lavoro eff.</div><div class="v" id="sLavoro">&mdash;</div></div>
+        <div class="stat"><div class="k">Pausa</div><div class="v" id="sPausa">&mdash;</div></div>
+      </div>
+      <div class="buono none" id="sBuono">
+        <span class="dot"></span><span id="sBuonoTxt">Nessun buono pasto</span><span class="amt" id="sBuonoAmt"></span>
+      </div>
+    </section>
+
+    <section class="soglie">
+      <h2>Turno teorico</h2>
+      <div class="row">
+        <span>Lavoro effettivo previsto</span>
+        <span class="t" id="sTurnoLav">--:--</span>
+      </div>
+      <div class="row">
+        <span>Permanenza prevista</span>
+        <span class="t" id="sTurnoPerm">--:--</span>
+      </div>
+      <div class="row">
+        <span>Uscita teorica</span>
+        <span class="t" id="sTurnoUsc">--:--</span>
+      </div>
+    </section>
+
+  </div><!-- /panel2 -->
 
   <p class="note">
     <b>Pausa pranzo:</b> raggiunte le <b>6:30</b> di permanenza, 30 minuti vengono scalati e non
@@ -267,14 +347,79 @@
     el('tCompleto').innerHTML = fmtOra(start + permanenzaPer(T_COMPLETO));
   }
 
-  document.addEventListener('input', calcola);
-  document.addEventListener('change', calcola);
+  // ---- tab 2: straordinario ----
+
+  function resetStraordinario(msg){
+    el('sExtra').className = 'v';
+    el('sExtra').innerHTML = '<span class="empty">' + msg + '</span>';
+    el('sPermanenza').textContent = '—';
+    el('sLavoro').textContent     = '—';
+    el('sPausa').textContent      = '—';
+    el('sTurnoUsc').textContent   = '--:--';
+    el('sBuono').className = 'buono none';
+    el('sBuonoTxt').textContent = 'Nessun buono pasto';
+    el('sBuonoAmt').textContent = '';
+  }
+
+  function calcolaStraordinario(){
+    var turno = +document.querySelector('input[name=turno]:checked').value;
+    el('sTurnoLav').textContent  = fmtDurata(turno);
+    el('sTurnoPerm').textContent = fmtDurata(permanenzaPer(turno));
+
+    var start = parseOra(el('sIngresso').value);
+    var end   = parseOra(el('sUscita').value);
+
+    if(start === null || end === null){
+      resetStraordinario('orario non valido');
+      return;
+    }
+
+    el('sTurnoUsc').innerHTML = fmtOra(start + permanenzaPer(turno));
+
+    // uscita anteriore all'ingresso: turno a cavallo della mezzanotte
+    var perm = end - start;
+    if(perm < 0){ perm += 1440; }
+
+    var lav   = lavoroDa(perm);
+    var pausa = perm - lav;
+    var extra = lav - turno;
+
+    el('sPermanenza').textContent = fmtDurata(perm);
+    el('sLavoro').textContent     = fmtDurata(lav);
+    el('sPausa').textContent      = pausa ? '−' + pausa + 'm' : '—';
+
+    el('sExtra').className = 'v ' + (extra > 0 ? 'pos' : extra < 0 ? 'neg' : '');
+    el('sExtra').textContent = (extra > 0 ? '+' : extra < 0 ? '−' : '')
+                             + fmtDurata(Math.abs(extra));
+
+    var completo = lav >= T_COMPLETO, parziale = lav >= T_PARZIALE;
+    el('sBuono').className = 'buono ' + (completo ? 'full' : parziale ? 'part' : 'none');
+    el('sBuonoTxt').textContent = completo ? 'Buono pasto completo'
+                                : parziale ? 'Buono pasto parziale'
+                                : 'Nessun buono pasto';
+    el('sBuonoAmt').textContent = completo ? '7,00 €' : parziale ? '5,60 €' : '';
+  }
+
+  function mostraTab(){
+    var due = el('tab2').checked;
+    el('panel1').hidden = due;
+    el('panel2').hidden = !due;
+  }
+
+  function aggiorna(){
+    mostraTab();
+    calcola();
+    calcolaStraordinario();
+  }
+
+  document.addEventListener('input', aggiorna);
+  document.addEventListener('change', aggiorna);
   el('mx').addEventListener('change', function(){
     calcola();                       // mostra il campo prima di dargli il focus
     el('cOre').focus();
     el('cOre').select();
   });
-  calcola();
+  aggiorna();
 })();
 </script>
 </body>
