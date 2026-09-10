@@ -17,7 +17,8 @@ server web: basta un doppio click sul file.
 
 1. Inserisci l'**orario di ingresso** (formato `HH:mm`, default `08:00`) e l'**orario di
    uscita**. L'uscita e preimpostata sull'**ora corrente**, cosi il conto e gia pronto
-   per la situazione di adesso; cambiandola si simula un'uscita diversa.
+   per la situazione di adesso; cambiandola si simula un'uscita diversa, e il pulsante
+   **Adesso** la riporta all'ora attuale.
 2. Scegli il **turno teorico** (default **Corta**):
 
    | Pulsante | Lavoro effettivo | Permanenza in sede |
@@ -41,7 +42,10 @@ server web: basta un doppio click sul file.
    | **Buono pasto parziale** | 7:00 di lavoro effettivo - 5,60 EUR |
    | **Buono pasto intero** | 9:00 di lavoro effettivo - 7,00 EUR |
 
-   Le righe gia raggiunte con l'uscita indicata vengono evidenziate in verde.
+   Accanto a ogni orario c'e quanto manca per arrivarci (`tra H:mm`) rispetto all'uscita
+   indicata; le righe gia raggiunte diventano verdi e riportano `raggiunto`. L'attesa e
+   calcolata sul tempo da passare **in sede**, quindi comprende gia la mezz'ora di pausa
+   quando questa scatta prima del traguardo.
 
 Lo straordinario e sempre calcolato sul **lavoro effettivo**, non sulla permanenza: la
 permanenza reale viene prima depurata della mezz'ora di pausa pranzo (se dovuta), poi
@@ -90,9 +94,14 @@ Di conseguenza, per maturare *N* ore di lavoro effettivo (con *N* maggiore o ugu
 
 - Un solo file: `index.html` (markup, stile e logica inclusi).
 - Nessuna libreria esterna, nessun build step, funziona anche offline.
-- Layout responsive, pensato anche per smartphone.
+- Layout responsive: ingresso e uscita stanno affiancati finche c'e spazio e i tre
+  indicatori diventano righe sotto i 420px, senza mai far scorrere la pagina in
+  orizzontale.
 - **Tema chiaro/scuro automatico**, in base alle preferenze del sistema
-  (`prefers-color-scheme`).
+  (`prefers-color-scheme`, con `color-scheme` dichiarato anche per i controlli nativi).
+- Accessibilita: il selettore del turno e un `radiogroup` etichettato, il risultato
+  principale e un `role="status"` che viene annunciato quando cambia, e lo stato
+  "raggiunto" non e affidato al solo colore.
 - Tutti i calcoli sono fatti in **minuti interi** dalla mezzanotte; se l'uscita cade
   il giorno successivo viene mostrato il suffisso `+1g`.
 - Costanti configurabili all'inizio dello `<script>`:
@@ -112,6 +121,8 @@ Di conseguenza, per maturare *N* ore di lavoro effettivo (con *N* maggiore o ugu
     necessaria (aggiunge la pausa oltre la soglia);
   - `lavoroDa(permanenza)`: la conversione inversa;
   - `calcola()`: unica funzione di aggiornamento, richiamata a ogni modifica dei campi;
+  - `segna(riga, testo, manca)`: scrive lo stato di una riga degli orari di uscita
+    (`tra H:mm` oppure `raggiunto`) e ne restituisce il raggiungimento;
   - `resetStato(msg)`: svuota il riquadro dei risultati quando un orario non e valido.
 
 ## Struttura del progetto
