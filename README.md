@@ -1,60 +1,23 @@
 # Calcolatrice Oraria
 
-Pagina web in **file singolo** (HTML + CSS + JS, nessuna dipendenza) per calcolare
-l'**orario di uscita** dal lavoro a partire dall'orario di ingresso, e capire quale
-**buono pasto** si ottiene.
+Pagina web in **file singolo** (HTML + CSS + JS, nessuna dipendenza) per calcolare lo
+**straordinario** maturato, il **buono pasto** che ne deriva e gli **orari di uscita**
+utili: quello del turno teorico e quelli delle due soglie del buono pasto.
 
-La pagina ha due tab:
-
-- **Uscita** - dato l'ingresso e il tipo di calcolo, dice a che ora si esce;
-- **Straordinario** - dato ingresso, uscita e turno teorico, dice quanto straordinario
-  si e maturato.
-
-L'**orario di ingresso e condiviso fra i due tab**: si digita una volta sola e resta
-lo stesso passando dall'uno all'altro.
+Tutto sta in una schermata sola: si inseriscono ingresso, uscita e turno, e la pagina
+aggiorna in tempo reale sia il conto di quanto hai gia fatto, sia gli orari da
+raggiungere.
 
 ## Uso
 
 Apri `index.html` in un qualsiasi browser. Non serve installare nulla, non serve un
 server web: basta un doppio click sul file.
 
-## Tab "Uscita"
+## Come funziona
 
-1. Inserisci l'**orario di ingresso** (formato `HH:mm`, default `08:00`).
-2. Scegli il tipo di calcolo:
-
-   | Pulsante | Lavoro effettivo | Permanenza in sede | Buono pasto |
-   |---|---|---|---|
-   | **Corta** | 6:00 | 6:00 | nessuno |
-   | **BP parziale** | 7:00 | 7:30 | Parziale - 5,60 EUR |
-   | **BP completo** | 9:00 | 9:30 | Completo - 7,00 EUR |
-   | **Personalizzato** | a scelta | calcolata | secondo le soglie |
-
-3. La pagina aggiorna in tempo reale:
-   - **Orario di uscita** corrispondente al calcolo scelto;
-   - **Permanenza** (tempo totale da passare in sede), **Lavoro effettivo** e **Pausa** scalata;
-   - il **buono pasto** maturato (con importo);
-   - gli orari di uscita delle due **soglie** buono pasto (parziale e completo),
-     evidenziati in verde quando risultano raggiunti.
-
-### Calcolo personalizzato
-
-Selezionando **Personalizzato** compare un campo in cui indicare liberamente le ore
-(0-23) e i minuti (0-59) di **lavoro effettivo** desiderati. Da li in poi il calcolo e
-identico ai preset: viene applicata la stessa regola della pausa pranzo e il buono pasto
-viene assegnato automaticamente se il lavoro effettivo raggiunge le soglie.
-
-Valori fuori intervallo o non numerici vengono riportati automaticamente entro i limiti,
-quindi il risultato mostrato e sempre valido.
-
-## Tab "Straordinario"
-
-Serve a fare il conto a posteriori: hai gia timbrato entrata e uscita e vuoi sapere
-quanto hai fatto in piu (o in meno) rispetto al turno che avresti dovuto fare.
-
-1. Inserisci l'**orario di ingresso** (lo stesso del tab "Uscita") e l'**orario di
-   uscita** effettivi. L'uscita e preimpostata sull'**ora corrente**, cosi il conto e
-   gia pronto se stai timbrando adesso.
+1. Inserisci l'**orario di ingresso** (formato `HH:mm`, default `08:00`) e l'**orario di
+   uscita**. L'uscita e preimpostata sull'**ora corrente**, cosi il conto e gia pronto
+   per la situazione di adesso; cambiandola si simula un'uscita diversa.
 2. Scegli il **turno teorico** (default **Corta**):
 
    | Pulsante | Lavoro effettivo | Permanenza in sede |
@@ -63,16 +26,27 @@ quanto hai fatto in piu (o in meno) rispetto al turno che avresti dovuto fare.
    | **7:12** | 7:12 | 7:42 |
    | **Lunga** | 9:00 | 9:30 |
 
-3. La pagina mostra:
+3. Il riquadro dei risultati mostra la situazione all'orario di uscita indicato:
    - lo **straordinario**: `+H:mm` in verde se hai lavorato oltre il turno, `-H:mm` in
      arancione se sei sotto, `0:00` se sei in pari;
-   - **Permanenza**, **Lavoro effettivo** e **Pausa** realmente scalata;
-   - il **buono pasto** maturato in base al lavoro effettivo svolto;
-   - il riepilogo del turno teorico, con l'**uscita teorica** corrispondente.
+   - **Permanenza**, **Lavoro effettivo** e **Pausa** pranzo realmente scalata;
+   - il **buono pasto** maturato, con l'importo.
+
+4. La sezione **Orari di uscita** dice a che ora bisogna uscire per ottenere ciascun
+   traguardo, a partire dall'ingresso inserito:
+
+   | Riga | Traguardo |
+   |---|---|
+   | **Turno teorico** | completare il turno selezionato (nessuno straordinario) |
+   | **Buono pasto parziale** | 7:00 di lavoro effettivo - 5,60 EUR |
+   | **Buono pasto intero** | 9:00 di lavoro effettivo - 7,00 EUR |
+
+   Le righe gia raggiunte con l'uscita indicata vengono evidenziate in verde.
 
 Lo straordinario e sempre calcolato sul **lavoro effettivo**, non sulla permanenza: la
 permanenza reale viene prima depurata della mezz'ora di pausa pranzo (se dovuta), poi
-confrontata con le ore di lavoro previste dal turno.
+confrontata con le ore di lavoro previste dal turno. Anche gli orari di uscita proposti
+tengono conto della pausa: sono permanenze, quindi includono la mezz'ora quando serve.
 
 Esempi con turno **Lunga** (9:00 di lavoro, 9:30 di permanenza) e ingresso `08:00`:
 
@@ -87,7 +61,7 @@ cavallo della mezzanotte (es. `22:00` -> `06:30` = 8:30 di permanenza).
 
 ## Regola della pausa pranzo
 
-E il punto centrale del calcolo:
+E il punto centrale del calcolo, e vale ovunque nella pagina:
 
 - Fino a **6 ore e 29 minuti** di permanenza, tutto il tempo conta come lavoro effettivo.
 - Dalle **6 ore e 30 minuti** in poi vengono **scalati 30 minuti** di pausa pranzo, che
@@ -102,15 +76,15 @@ Di conseguenza, per maturare *N* ore di lavoro effettivo (con *N* maggiore o ugu
 | 6:29 | 6:29 | 14:29 | nessuno |
 | 6:30 | 7:00 | 15:00 | nessuno |
 | 7:00 | 7:30 | 15:30 | parziale |
-| 9:00 | 9:30 | 17:30 | completo |
-| 10:45 | 11:15 | 19:15 | completo |
+| 9:00 | 9:30 | 17:30 | intero |
+| 10:45 | 11:15 | 19:15 | intero |
 
 ## Buoni pasto
 
 | Tipo | Lavoro effettivo richiesto | Permanenza richiesta | Importo |
 |---|---|---|---|
 | Parziale | 7:00 | 7:30 | 5,60 EUR |
-| Completo | 9:00 | 9:30 | 7,00 EUR |
+| Intero | 9:00 | 9:30 | 7,00 EUR |
 
 ## Dettagli tecnici
 
@@ -130,18 +104,15 @@ Di conseguenza, per maturare *N* ore di lavoro effettivo (con *N* maggiore o ugu
   var T_COMPLETO = 540;    // 9:00 di lavoro effettivo -> 7,00 EUR
   ```
 
-  I turni teorici del secondo tab sono i valori dei radio `name="turno"` nel markup
-  (`360`, `432`, `540` minuti di lavoro effettivo).
+  I turni teorici sono i valori dei radio `name="turno"` nel markup (`360`, `432`, `540`
+  minuti di lavoro effettivo).
 
 - Funzioni chiave della logica:
   - `permanenzaPer(lavoro)`: converte il lavoro effettivo desiderato nella permanenza
     necessaria (aggiunge la pausa oltre la soglia);
   - `lavoroDa(permanenza)`: la conversione inversa;
-  - `lavoroCustom()`: legge e normalizza ore e minuti del calcolo personalizzato;
-  - `calcola()`: aggiorna il tab "Uscita";
-  - `calcolaStraordinario()`: aggiorna il tab "Straordinario";
-  - `aggiorna()`: mostra il tab attivo e ricalcola entrambi a ogni modifica;
-  - `rispecchia(da, a)`: tiene allineati i due campi dell'orario di ingresso.
+  - `calcola()`: unica funzione di aggiornamento, richiamata a ogni modifica dei campi;
+  - `resetStato(msg)`: svuota il riquadro dei risultati quando un orario non e valido.
 
 ## Struttura del progetto
 
