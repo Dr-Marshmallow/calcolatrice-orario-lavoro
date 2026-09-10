@@ -1,66 +1,38 @@
 # Calcolatrice Oraria
 
-Pagina web in **file singolo** (HTML + CSS + JS, nessuna dipendenza) per calcolare lo
-**straordinario** maturato, il **buono pasto** che ne deriva e gli **orari di uscita**
-utili: quello del turno teorico e quelli delle due soglie del buono pasto.
+Pagina web in file singolo, senza dipendenze, per sapere a colpo d'occhio quanto
+straordinario hai fatto, che buono pasto hai maturato e a che ora devi uscire per
+ottenerlo.
 
-Tutto sta in una schermata sola: si inseriscono ingresso, uscita e turno, e la pagina
-aggiorna in tempo reale sia il conto di quanto hai gia fatto, sia gli orari da
-raggiungere.
-
-All'apertura l'**orario di ingresso e vuoto** ed e gia a fuoco: e l'unico dato che la
-pagina non puo indovinare. Alla prima interazione col campo (click o frecce) parte
-dalle **8:00** invece che dall'ora corrente, che e cio che il browser proporrebbe su un
-campo vuoto: da li si aggiusta col timepicker. Finche manca, i campi calcolati restano al loro posto ma
-smorzati, con i segnaposto `--:--`, e il risultato principale invita a compilarlo:
-si vede subito che cosa la pagina calcolera, senza che sembri rotta e senza che il
-contenuto salti quando i valori compaiono.
-
-## Uso
-
-Apri `index.html` in un qualsiasi browser. Non serve installare nulla, non serve un
-server web: basta un doppio click sul file.
+Apri `index.html` in un browser: non serve altro, funziona anche offline.
 
 ## Come funziona
 
-1. Inserisci l'**orario di ingresso** (formato `HH:mm`; vuoto all'apertura, la prima
-   selezione parte dalle `08:00`) e l'**orario di uscita**. L'uscita e preimpostata sull'**ora corrente**, cosi il conto e gia pronto
-   per la situazione di adesso; cambiandola si simula un'uscita diversa, e il pulsante
-   **Adesso** la riporta all'ora attuale.
-2. Scegli il **turno teorico** (default **Corta**):
+Si compilano tre cose:
 
-   | Pulsante | Lavoro effettivo | Permanenza in sede |
-   |---|---|---|
-   | **Corta** | 6:00 | 6:00 |
-   | **7:12** | 7:12 | 7:42 |
-   | **Lunga** | 9:00 | 9:30 |
+- **Ingresso** - vuoto all'apertura, la prima selezione parte dalle 8:00.
+- **Uscita** - preimpostata sull'ora corrente; il pulsante *Adesso* ce la riporta,
+  cambiandola si simula un'uscita diversa.
+- **Turno teorico** - quello che avresti dovuto fare:
 
-3. Il riquadro dei risultati mostra la situazione all'orario di uscita indicato:
-   - lo **straordinario**: `+H:mm` in verde se hai lavorato oltre il turno, `-H:mm` in
-     arancione se sei sotto, `0:00` se sei in pari;
-   - **Permanenza**, **Lavoro effettivo** e **Pausa** pranzo realmente scalata;
-   - il **buono pasto** maturato, con l'importo.
+  | Pulsante | Lavoro effettivo | In sede |
+  |---|---|---|
+  | **Corta** | 6:00 | 6:00 |
+  | **7:12** | 7:12 | 7:42 |
+  | **Lunga** | 9:00 | 9:30 |
 
-4. La sezione **Orari di uscita** dice a che ora bisogna uscire per ottenere ciascun
-   traguardo, a partire dall'ingresso inserito:
+La pagina aggiorna in tempo reale due cose:
 
-   | Riga | Traguardo |
-   |---|---|
-   | **Turno teorico** | completare il turno selezionato (nessuno straordinario) |
-   | **Buono pasto parziale** | 7:00 di lavoro effettivo - 5,60 EUR |
-   | **Buono pasto intero** | 9:00 di lavoro effettivo - 7,00 EUR |
+1. **Come stai adesso**: straordinario (`+H:mm` in verde se sei oltre il turno,
+   `-H:mm` in arancione se sei sotto), permanenza, lavoro effettivo, pausa scalata
+   e buono pasto maturato.
+2. **Gli orari di uscita** per completare il turno e per prendere ciascun buono
+   pasto, con quanto manca ad arrivarci.
 
-   Accanto a ogni orario c'e quanto manca per arrivarci (`tra H:mm`) rispetto all'uscita
-   indicata; le righe gia raggiunte diventano verdi e riportano `raggiunto`. L'attesa e
-   calcolata sul tempo da passare **in sede**, quindi comprende gia la mezz'ora di pausa
-   quando questa scatta prima del traguardo.
+Finche l'ingresso non c'e, i campi calcolati restano visibili ma smorzati.
 
-Lo straordinario e sempre calcolato sul **lavoro effettivo**, non sulla permanenza: la
-permanenza reale viene prima depurata della mezz'ora di pausa pranzo (se dovuta), poi
-confrontata con le ore di lavoro previste dal turno. Anche gli orari di uscita proposti
-tengono conto della pausa: sono permanenze, quindi includono la mezz'ora quando serve.
-
-Esempi con turno **Lunga** (9:00 di lavoro, 9:30 di permanenza) e ingresso `08:00`:
+Lo straordinario si conta sempre sul lavoro effettivo, mai sulla permanenza. Esempi
+con turno **Lunga** (9:00 di lavoro, 9:30 in sede) e ingresso `08:00`:
 
 | Uscita | Permanenza | Lavoro effettivo | Straordinario |
 |---|---|---|---|
@@ -68,19 +40,23 @@ Esempi con turno **Lunga** (9:00 di lavoro, 9:30 di permanenza) e ingresso `08:0
 | 18:15 | 10:15 | 9:45 | +0:45 |
 | 17:00 | 9:00 | 8:30 | -0:30 |
 
-Se l'orario di uscita e anteriore a quello di ingresso il turno viene considerato a
-cavallo della mezzanotte (es. `22:00` -> `06:30` = 8:30 di permanenza).
+## La pausa pranzo
 
-## Regola della pausa pranzo
+E la regola che governa tutto il resto:
 
-E il punto centrale del calcolo, e vale ovunque nella pagina:
+- fino a **6:29** di permanenza, tutto il tempo conta come lavoro effettivo;
+- dalle **6:30** in poi vengono **scalati 30 minuti**, che non contano come lavoro.
 
-- Fino a **6 ore e 29 minuti** di permanenza, tutto il tempo conta come lavoro effettivo.
-- Dalle **6 ore e 30 minuti** in poi vengono **scalati 30 minuti** di pausa pranzo, che
-  non vengono conteggiati come lavoro.
+Quindi per maturare N ore di lavoro effettivo (con N da 6:30 in su) bisogna restare
+in sede N + 30 minuti. Vale anche per gli orari di uscita proposti: sono permanenze,
+la mezz'ora e gia compresa.
 
-Di conseguenza, per maturare *N* ore di lavoro effettivo (con *N* maggiore o uguale a
-6:30) bisogna restare in sede *N* + 30 minuti. Esempi con ingresso alle `08:00`:
+| Buono pasto | Lavoro effettivo | In sede | Importo |
+|---|---|---|---|
+| Parziale | 7:00 | 7:30 | 5,60 EUR |
+| Intero | 9:00 | 9:30 | 7,00 EUR |
+
+Esempi con ingresso alle `08:00`:
 
 | Lavoro effettivo | Permanenza | Uscita | Buono pasto |
 |---|---|---|---|
@@ -91,57 +67,17 @@ Di conseguenza, per maturare *N* ore di lavoro effettivo (con *N* maggiore o ugu
 | 9:00 | 9:30 | 17:30 | intero |
 | 10:45 | 11:15 | 19:15 | intero |
 
-## Buoni pasto
-
-| Tipo | Lavoro effettivo richiesto | Permanenza richiesta | Importo |
-|---|---|---|---|
-| Parziale | 7:00 | 7:30 | 5,60 EUR |
-| Intero | 9:00 | 9:30 | 7,00 EUR |
+Se l'uscita e anteriore all'ingresso il turno e considerato a cavallo della
+mezzanotte, e gli orari proposti portano il suffisso `+1g`.
 
 ## Dettagli tecnici
 
-- Un solo file: `index.html` (markup, stile e logica inclusi).
-- Nessuna libreria esterna, nessun build step, funziona anche offline.
-- Layout responsive: ingresso e uscita stanno affiancati finche c'e spazio e i tre
-  indicatori diventano righe sotto i 420px, senza mai far scorrere la pagina in
-  orizzontale.
-- **Tema chiaro/scuro automatico**, in base alle preferenze del sistema
-  (`prefers-color-scheme`, con `color-scheme` dichiarato anche per i controlli nativi).
-- Accessibilita: il selettore del turno e un `radiogroup` etichettato, il risultato
-  principale e un `role="status"` che viene annunciato quando cambia, e lo stato
-  "raggiunto" non e affidato al solo colore.
-- Un campo vuoto non viene trattato come errore: al posto di "orario non valido" la
-  pagina chiede di compilarlo, e le classi `attesa` / `attesa-orari` sul `body`
-  smorzano solo i valori che non e ancora possibile calcolare.
-- Tutti i calcoli sono fatti in **minuti interi** dalla mezzanotte; se l'uscita cade
-  il giorno successivo viene mostrato il suffisso `+1g`.
-- Costanti configurabili all'inizio dello `<script>`:
+Tutto sta in `index.html`: markup, stile e logica. Nessuna libreria, nessun build,
+tema chiaro/scuro automatico, layout adatto anche al telefono.
 
-  ```js
-  var PAUSA = 30;          // minuti scalati per la pausa pranzo
-  var SOGLIA_PAUSA = 390;  // 6:30 di permanenza: da qui in poi la pausa viene scalata
-  var T_PARZIALE = 420;    // 7:00 di lavoro effettivo -> 5,60 EUR
-  var T_COMPLETO = 540;    // 9:00 di lavoro effettivo -> 7,00 EUR
-  var INGRESSO_DEF = '08:00';  // da dove parte la prima selezione dell'ingresso
-  ```
+Per cambiare i numeri, in cima allo `<script>`:
 
-  I turni teorici sono i valori dei radio `name="turno"` nel markup (`360`, `432`, `540`
-  minuti di lavoro effettivo).
-
-- Funzioni chiave della logica:
-  - `permanenzaPer(lavoro)`: converte il lavoro effettivo desiderato nella permanenza
-    necessaria (aggiunge la pausa oltre la soglia);
-  - `lavoroDa(permanenza)`: la conversione inversa;
-  - `calcola()`: unica funzione di aggiornamento, richiamata a ogni modifica dei campi;
-  - `segna(riga, testo, manca)`: scrive lo stato di una riga degli orari di uscita
-    (`tra H:mm` oppure `raggiunto`) e ne restituisce il raggiungimento;
-  - `attesaDi(campo, nome)`: sceglie fra l'invito a compilare un campo vuoto e la
-    segnalazione di un orario non valido;
-  - `proponiIngresso()`: porta l'ingresso vuoto a `INGRESSO_DEF` alla prima
-    interazione dell'utente (non al focus, cosi l'autofocus iniziale lo lascia vuoto);
-  - `resetStato(msg)`: svuota il riquadro dei risultati quando manca un orario.
-
-## Struttura del progetto
-
-- `index.html` - l'applicazione completa
-- `README.md` - questo file
+- `PAUSA` e `SOGLIA_PAUSA` - i 30 minuti di pausa e la soglia delle 6:30;
+- `BUONI` - soglie, importi e nomi dei buoni pasto, da cui si generano anche i testi
+  che compaiono nella pagina;
+- i turni teorici sono i `value` dei radio `name="turno"` nel markup.

@@ -80,8 +80,7 @@
   .out-main .n{display:flex; flex-direction:column; gap:1px}
   .out-main .k{font-size:13px; font-weight:600; color:var(--muted)}
   .out-main .v{font-size:38px; font-weight:700; letter-spacing:-.03em; font-variant-numeric:tabular-nums; line-height:1}
-  .out-main .v small{font-size:15px; font-weight:600; color:var(--muted); margin-left:6px}
-  .out-main .v .empty{font-size:19px; font-weight:600; color:var(--muted); letter-spacing:0}
+  .out-main .v.vuoto{font-size:19px; font-weight:600; color:var(--muted); letter-spacing:0}
   .out-main .v.pos{color:var(--ok)}
   .out-main .v.neg{color:var(--warn)}
 
@@ -110,6 +109,7 @@
   .row .t{margin-left:auto; display:flex; flex-direction:column; gap:1px;
           text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums}
   .row .t .ora{font-size:15px; font-weight:700}
+  .g{font-size:.72em; font-weight:600; margin-left:1px}  /* suffisso +1g */
   .row.hit .n .k, .row.hit .t .ora, .row.hit .t .sub{color:var(--ok)}
 
   @media (max-width:420px){
@@ -183,34 +183,36 @@
 
   <section class="soglie">
     <h2>Orari di uscita</h2>
+    <!-- .k e .sub delle righe dei buoni sono scritti dallo script a partire da
+         BUONI, cosi importi e soglie stanno in un posto solo -->
     <div class="row" id="rowT">
       <span class="n">
         <span class="k">Turno teorico</span>
-        <span class="sub" id="labTurno">&mdash;</span>
+        <span class="sub"></span>
       </span>
       <span class="t">
-        <span class="ora" id="tTurno">--:--</span>
-        <span class="sub" id="stTurno">&mdash;</span>
+        <span class="ora">--:--</span>
+        <span class="sub">&mdash;</span>
       </span>
     </div>
     <div class="row" id="rowP">
       <span class="n">
-        <span class="k">Buono pasto parziale &middot; 5,60 &euro;</span>
-        <span class="sub">7:00 di lavoro &middot; 7:30 in sede</span>
+        <span class="k"></span>
+        <span class="sub"></span>
       </span>
       <span class="t">
-        <span class="ora" id="tParziale">--:--</span>
-        <span class="sub" id="stParziale">&mdash;</span>
+        <span class="ora">--:--</span>
+        <span class="sub">&mdash;</span>
       </span>
     </div>
     <div class="row" id="rowC">
       <span class="n">
-        <span class="k">Buono pasto intero &middot; 7,00 &euro;</span>
-        <span class="sub">9:00 di lavoro &middot; 9:30 in sede</span>
+        <span class="k"></span>
+        <span class="sub"></span>
       </span>
       <span class="t">
-        <span class="ora" id="tCompleto">--:--</span>
-        <span class="sub" id="stCompleto">&mdash;</span>
+        <span class="ora">--:--</span>
+        <span class="sub">&mdash;</span>
       </span>
     </div>
   </section>
@@ -224,13 +226,21 @@
 
 <script>
 (function(){
+  var GIORNO = 1440;       // minuti in un giorno
   var PAUSA = 30;          // minuti scalati per la pausa pranzo
   var SOGLIA_PAUSA = 390;  // 6:30 di permanenza
-  var T_PARZIALE = 420;    // 7:00 di lavoro effettivo -> 5,60 EUR
-  var T_COMPLETO = 540;    // 9:00 di lavoro effettivo -> 7,00 EUR
   var INGRESSO_DEF = '08:00';  // da dove parte la prima selezione dell'ingresso
 
+  // I buoni pasto, dal piu basso al piu alto: unica fonte di soglie, importi e nomi.
+  // 'lavoro' e il lavoro effettivo richiesto, la permanenza necessaria si ricava.
+  var BUONI = [
+    { riga:'rowP', lavoro:420, importo:'5,60 €', nome:'Buono pasto parziale', classe:'part' },
+    { riga:'rowC', lavoro:540, importo:'7,00 €', nome:'Buono pasto intero',   classe:'full' }
+  ];
+
   function el(id){ return document.getElementById(id); }
+
+  function pad(n){ return n < 10 ? '0' + n : '' + n; }
 
   function parseOra(v){
     var m = /^(\d{1,2}):(\d{2})$/.exec(v || '');
@@ -240,18 +250,9 @@
     return h * 60 + mi;
   }
 
-  function pad(n){ return n < 10 ? '0' + n : '' + n; }
-
   function oraCorrente(){
     var d = new Date();
     return pad(d.getHours()) + ':' + pad(d.getMinutes());
-  }
-
-  function fmtOra(min){
-    var g = Math.floor(min / 1440);
-    var t = ((min % 1440) + 1440) % 1440;
-    var s = pad(Math.floor(t / 60)) + ':' + pad(t % 60);
-    return g > 0 ? s + '<small>+' + g + 'g</small>' : s;
   }
 
   function fmtDurata(min){
@@ -264,47 +265,88 @@
   // lavoro effettivo desiderato -> permanenza necessaria
   function permanenzaPer(l){ return l < SOGLIA_PAUSA ? l : l + PAUSA; }
 
-  function turnoSel(){ return document.querySelector('input[name=turno]:checked'); }
-  function nomeTurno(r){ return document.querySelector('label[for="' + r.id + '"]').textContent; }
+  // la regola di un traguardo, come compare sotto il suo nome
+  function regolaDi(lavoro){
+    return fmtDurata(lavoro) + ' di lavoro · ' + fmtDurata(permanenzaPer(lavoro)) + ' in sede';
+  }
+
+  // gli elementi di una riga degli "Orari di uscita", presi dalla sua struttura
+  function riga(id){
+    var r = el(id);
+    return { row:    r,
+             nome:   r.querySelector('.n .k'),
+             regola: r.querySelector('.n .sub'),
+             ora:    r.querySelector('.t .ora'),
+             stato:  r.querySelector('.t .sub') };
+  }
+
+  var rigaTurno = riga('rowT');
+  var RIGHE = [rigaTurno];
+
+  // la parte fissa delle righe dei buoni si scrive una volta sola, da BUONI
+  BUONI.forEach(function(b){
+    b.perm = permanenzaPer(b.lavoro);
+    b.el = riga(b.riga);
+    b.el.nome.textContent   = b.nome + ' · ' + b.importo;
+    b.el.regola.textContent = regolaDi(b.lavoro);
+    RIGHE.push(b.el);
+  });
+
+  // scrive un orario, col suffisso +Ng quando cade nei giorni successivi
+  function scriviOra(elem, min){
+    var g = Math.floor(min / GIORNO);
+    var t = ((min % GIORNO) + GIORNO) % GIORNO;
+    elem.textContent = pad(Math.floor(t / 60)) + ':' + pad(t % 60);
+    if(g > 0){
+      var suffisso = document.createElement('span');
+      suffisso.className = 'g';
+      suffisso.textContent = '+' + g + 'g';
+      elem.appendChild(suffisso);
+    }
+  }
 
   // stato di una riga: quanto manca in sede, o traguardo gia raggiunto.
   // Il confronto e sulla permanenza, cosi la mezz'ora di pausa e gia dentro l'attesa.
-  function segna(riga, testo, manca){
+  function segna(r, manca){
     var fatto = manca <= 0;
-    el(testo).textContent = fatto ? '✓ raggiunto' : 'tra ' + fmtDurata(manca);
-    el(riga).classList.toggle('hit', fatto);
+    r.stato.textContent = fatto ? '✓ raggiunto' : 'tra ' + fmtDurata(manca);
+    r.row.classList.toggle('hit', fatto);
     return fatto;
   }
 
   // un campo vuoto non e un errore da segnalare, e solo un dato che manca
-  function attesaDi(campo, nome){
-    return el(campo).value ? 'orario non valido' : "inserisci l'" + nome;
+  function attesaDi(campo){
+    return el(campo).value ? 'orario non valido' : "inserisci l'" + campo;
+  }
+
+  function turnoSel(){ return document.querySelector('input[name=turno]:checked'); }
+  function nomeTurno(r){ return document.querySelector('label[for="' + r.id + '"]').textContent; }
+
+  // b e il buono maturato, oppure null
+  function mostraBuono(b){
+    el('buono').className = 'buono ' + (b ? b.classe : 'none');
+    el('buonoTxt').textContent = b ? b.nome : 'Nessun buono pasto';
+    el('buonoAmt').textContent = b ? b.importo : '';
   }
 
   // azzera lo stato attuale; gli orari di uscita restano gestiti da calcola()
   function resetStato(msg){
-    el('extra').className = 'v';
-    el('extra').innerHTML = '<span class="empty">' + msg + '</span>';
-    el('permanenza').textContent = '—';
-    el('lavoro').textContent     = '—';
-    el('pausa').textContent      = '—';
-    el('buono').className = 'buono none';
-    el('buonoTxt').textContent = 'Nessun buono pasto';
-    el('buonoAmt').textContent = '';
-    ['stTurno', 'stParziale', 'stCompleto'].forEach(function(id){
-      el(id).textContent = '—';
-    });
-    ['rowT', 'rowP', 'rowC'].forEach(function(id){
-      el(id).classList.remove('hit');
+    el('extra').className = 'v vuoto';
+    el('extra').textContent = msg;
+    ['permanenza', 'lavoro', 'pausa'].forEach(function(id){ el(id).textContent = '—'; });
+    mostraBuono(null);
+    RIGHE.forEach(function(r){
+      r.stato.textContent = '—';
+      r.row.classList.remove('hit');
     });
   }
 
   function calcola(){
     var radio = turnoSel();
     var turno = +radio.value;
-    el('kTurno').textContent   = 'sul turno ' + nomeTurno(radio);
-    el('labTurno').textContent = fmtDurata(turno) + ' di lavoro · '
-                               + fmtDurata(permanenzaPer(turno)) + ' in sede';
+    var permTurno = permanenzaPer(turno);
+    el('kTurno').textContent = 'sul turno ' + nomeTurno(radio);
+    rigaTurno.regola.textContent = regolaDi(turno);
 
     var start = parseOra(el('ingresso').value);
     var end   = parseOra(el('uscita').value);
@@ -315,25 +357,22 @@
 
     // senza ingresso non c'e nessun orario da proporre
     if(start === null){
-      resetStato(attesaDi('ingresso', 'ingresso'));
-      el('tTurno').textContent    = '--:--';
-      el('tParziale').textContent = '--:--';
-      el('tCompleto').textContent = '--:--';
+      resetStato(attesaDi('ingresso'));
+      RIGHE.forEach(function(r){ r.ora.textContent = '--:--'; });
       return;
     }
 
-    el('tTurno').innerHTML    = fmtOra(start + permanenzaPer(turno));
-    el('tParziale').innerHTML = fmtOra(start + permanenzaPer(T_PARZIALE));
-    el('tCompleto').innerHTML = fmtOra(start + permanenzaPer(T_COMPLETO));
+    scriviOra(rigaTurno.ora, start + permTurno);
+    BUONI.forEach(function(b){ scriviOra(b.el.ora, start + b.perm); });
 
     if(end === null){
-      resetStato(attesaDi('uscita', 'uscita'));
+      resetStato(attesaDi('uscita'));
       return;
     }
 
     // uscita anteriore all'ingresso: turno a cavallo della mezzanotte
     var perm = end - start;
-    if(perm < 0){ perm += 1440; }
+    if(perm < 0){ perm += GIORNO; }
 
     var lav   = lavoroDa(perm);
     var pausa = perm - lav;
@@ -347,16 +386,14 @@
     el('extra').textContent = (extra > 0 ? '+' : extra < 0 ? '−' : '')
                             + fmtDurata(Math.abs(extra));
 
-    // quanto manca a ciascun traguardo, con l'uscita indicata come riferimento
-    segna('rowT', 'stTurno', permanenzaPer(turno) - perm);
-    var parziale = segna('rowP', 'stParziale', permanenzaPer(T_PARZIALE) - perm);
-    var completo = segna('rowC', 'stCompleto', permanenzaPer(T_COMPLETO) - perm);
+    segna(rigaTurno, permTurno - perm);
 
-    el('buono').className = 'buono ' + (completo ? 'full' : parziale ? 'part' : 'none');
-    el('buonoTxt').textContent = completo ? 'Buono pasto intero'
-                               : parziale ? 'Buono pasto parziale'
-                               : 'Nessun buono pasto';
-    el('buonoAmt').textContent = completo ? '7,00 €' : parziale ? '5,60 €' : '';
+    // vince il buono piu alto raggiunto: BUONI e in ordine crescente
+    var maturato = null;
+    BUONI.forEach(function(b){
+      if(segna(b.el, b.perm - perm)){ maturato = b; }
+    });
+    mostraBuono(maturato);
   }
 
   document.addEventListener('input', calcola);
