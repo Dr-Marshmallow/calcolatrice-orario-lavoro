@@ -204,15 +204,15 @@
 
       <div class="field">
         <label for="sUscita">Orario di uscita</label>
-        <input type="time" id="sUscita" value="17:30" step="60">
+        <input type="time" id="sUscita" step="60">
       </div>
 
       <div class="field">
         <label>Turno teorico</label>
         <div class="seg">
-          <input type="radio" name="turno" id="t6" value="360"><label for="t6">Corta</label>
+          <input type="radio" name="turno" id="t6" value="360" checked><label for="t6">Corta</label>
           <input type="radio" name="turno" id="t712" value="432"><label for="t712">7:12</label>
-          <input type="radio" name="turno" id="t9" value="540" checked><label for="t9">Lunga</label>
+          <input type="radio" name="turno" id="t9" value="540"><label for="t9">Lunga</label>
         </div>
       </div>
     </section>
@@ -421,6 +421,10 @@
     el('ingresso').addEventListener(ev, rispecchia('ingresso', 'sIngresso'));
     el('sIngresso').addEventListener(ev, rispecchia('sIngresso', 'ingresso'));
   });
+
+  // l'uscita nel tab straordinario parte dall'ora corrente
+  var ora = new Date();
+  el('sUscita').value = pad(ora.getHours()) + ':' + pad(ora.getMinutes());
 
   document.addEventListener('input', aggiorna);
   document.addEventListener('change', aggiorna);

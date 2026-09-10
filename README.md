@@ -53,8 +53,9 @@ Serve a fare il conto a posteriori: hai gia timbrato entrata e uscita e vuoi sap
 quanto hai fatto in piu (o in meno) rispetto al turno che avresti dovuto fare.
 
 1. Inserisci l'**orario di ingresso** (lo stesso del tab "Uscita") e l'**orario di
-   uscita** effettivi.
-2. Scegli il **turno teorico**:
+   uscita** effettivi. L'uscita e preimpostata sull'**ora corrente**, cosi il conto e
+   gia pronto se stai timbrando adesso.
+2. Scegli il **turno teorico** (default **Corta**):
 
    | Pulsante | Lavoro effettivo | Permanenza in sede |
    |---|---|---|
