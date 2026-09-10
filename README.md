@@ -8,6 +8,14 @@ Tutto sta in una schermata sola: si inseriscono ingresso, uscita e turno, e la p
 aggiorna in tempo reale sia il conto di quanto hai gia fatto, sia gli orari da
 raggiungere.
 
+All'apertura l'**orario di ingresso e vuoto** ed e gia a fuoco: e l'unico dato che la
+pagina non puo indovinare. Alla prima interazione col campo (click o frecce) parte
+dalle **8:00** invece che dall'ora corrente, che e cio che il browser proporrebbe su un
+campo vuoto: da li si aggiusta col timepicker. Finche manca, i campi calcolati restano al loro posto ma
+smorzati, con i segnaposto `--:--`, e il risultato principale invita a compilarlo:
+si vede subito che cosa la pagina calcolera, senza che sembri rotta e senza che il
+contenuto salti quando i valori compaiono.
+
 ## Uso
 
 Apri `index.html` in un qualsiasi browser. Non serve installare nulla, non serve un
@@ -15,8 +23,8 @@ server web: basta un doppio click sul file.
 
 ## Come funziona
 
-1. Inserisci l'**orario di ingresso** (formato `HH:mm`, default `08:00`) e l'**orario di
-   uscita**. L'uscita e preimpostata sull'**ora corrente**, cosi il conto e gia pronto
+1. Inserisci l'**orario di ingresso** (formato `HH:mm`; vuoto all'apertura, la prima
+   selezione parte dalle `08:00`) e l'**orario di uscita**. L'uscita e preimpostata sull'**ora corrente**, cosi il conto e gia pronto
    per la situazione di adesso; cambiandola si simula un'uscita diversa, e il pulsante
    **Adesso** la riporta all'ora attuale.
 2. Scegli il **turno teorico** (default **Corta**):
@@ -102,6 +110,9 @@ Di conseguenza, per maturare *N* ore di lavoro effettivo (con *N* maggiore o ugu
 - Accessibilita: il selettore del turno e un `radiogroup` etichettato, il risultato
   principale e un `role="status"` che viene annunciato quando cambia, e lo stato
   "raggiunto" non e affidato al solo colore.
+- Un campo vuoto non viene trattato come errore: al posto di "orario non valido" la
+  pagina chiede di compilarlo, e le classi `attesa` / `attesa-orari` sul `body`
+  smorzano solo i valori che non e ancora possibile calcolare.
 - Tutti i calcoli sono fatti in **minuti interi** dalla mezzanotte; se l'uscita cade
   il giorno successivo viene mostrato il suffisso `+1g`.
 - Costanti configurabili all'inizio dello `<script>`:
@@ -111,6 +122,7 @@ Di conseguenza, per maturare *N* ore di lavoro effettivo (con *N* maggiore o ugu
   var SOGLIA_PAUSA = 390;  // 6:30 di permanenza: da qui in poi la pausa viene scalata
   var T_PARZIALE = 420;    // 7:00 di lavoro effettivo -> 5,60 EUR
   var T_COMPLETO = 540;    // 9:00 di lavoro effettivo -> 7,00 EUR
+  var INGRESSO_DEF = '08:00';  // da dove parte la prima selezione dell'ingresso
   ```
 
   I turni teorici sono i valori dei radio `name="turno"` nel markup (`360`, `432`, `540`
@@ -123,7 +135,11 @@ Di conseguenza, per maturare *N* ore di lavoro effettivo (con *N* maggiore o ugu
   - `calcola()`: unica funzione di aggiornamento, richiamata a ogni modifica dei campi;
   - `segna(riga, testo, manca)`: scrive lo stato di una riga degli orari di uscita
     (`tra H:mm` oppure `raggiunto`) e ne restituisce il raggiungimento;
-  - `resetStato(msg)`: svuota il riquadro dei risultati quando un orario non e valido.
+  - `attesaDi(campo, nome)`: sceglie fra l'invito a compilare un campo vuoto e la
+    segnalazione di un orario non valido;
+  - `proponiIngresso()`: porta l'ingresso vuoto a `INGRESSO_DEF` alla prima
+    interazione dell'utente (non al focus, cosi l'autofocus iniziale lo lascia vuoto);
+  - `resetStato(msg)`: svuota il riquadro dei risultati quando manca un orario.
 
 ## Struttura del progetto
 

@@ -120,6 +120,11 @@
     .stat .v{margin-top:0}
   }
 
+  /* in attesa dei dati: i valori sono segnaposto, le etichette restano leggibili */
+  .stat .v, .buono, .row .t{transition:opacity .15s}
+  .attesa .stat .v, .attesa .buono{opacity:.4}
+  .attesa-orari .row .t{opacity:.4}
+
   .note{color:var(--muted); font-size:12.5px; line-height:1.6; padding:0 4px; margin:0}
   .note b{color:var(--ink); font-weight:600}
 </style>
@@ -136,7 +141,7 @@
     <div class="orari">
       <div class="field">
         <div class="head"><label for="ingresso">Ingresso</label></div>
-        <input type="time" id="ingresso" value="08:00" step="60">
+        <input type="time" id="ingresso" step="60" autofocus>
       </div>
 
       <div class="field">
@@ -223,6 +228,7 @@
   var SOGLIA_PAUSA = 390;  // 6:30 di permanenza
   var T_PARZIALE = 420;    // 7:00 di lavoro effettivo -> 5,60 EUR
   var T_COMPLETO = 540;    // 9:00 di lavoro effettivo -> 7,00 EUR
+  var INGRESSO_DEF = '08:00';  // da dove parte la prima selezione dell'ingresso
 
   function el(id){ return document.getElementById(id); }
 
@@ -270,6 +276,11 @@
     return fatto;
   }
 
+  // un campo vuoto non e un errore da segnalare, e solo un dato che manca
+  function attesaDi(campo, nome){
+    return el(campo).value ? 'orario non valido' : "inserisci l'" + nome;
+  }
+
   // azzera lo stato attuale; gli orari di uscita restano gestiti da calcola()
   function resetStato(msg){
     el('extra').className = 'v';
@@ -298,9 +309,13 @@
     var start = parseOra(el('ingresso').value);
     var end   = parseOra(el('uscita').value);
 
-    // senza ingresso valido non c'e nessun orario da proporre
+    // i valori che non si possono ancora calcolare restano visibili ma smorzati
+    document.body.classList.toggle('attesa', start === null || end === null);
+    document.body.classList.toggle('attesa-orari', start === null);
+
+    // senza ingresso non c'e nessun orario da proporre
     if(start === null){
-      resetStato('ingresso non valido');
+      resetStato(attesaDi('ingresso', 'ingresso'));
       el('tTurno').textContent    = '--:--';
       el('tParziale').textContent = '--:--';
       el('tCompleto').textContent = '--:--';
@@ -312,7 +327,7 @@
     el('tCompleto').innerHTML = fmtOra(start + permanenzaPer(T_COMPLETO));
 
     if(end === null){
-      resetStato('uscita non valida');
+      resetStato(attesaDi('uscita', 'uscita'));
       return;
     }
 
@@ -346,6 +361,25 @@
 
   document.addEventListener('input', calcola);
   document.addEventListener('change', calcola);
+
+  // Il campo ingresso nasce vuoto, e su un campo vuoto il browser aprirebbe il
+  // timepicker sull'ora corrente. Alla prima interazione lo portiamo a INGRESSO_DEF,
+  // cosi la selezione parte da li. Non si aggancia a 'focus' perche l'autofocus
+  // iniziale non e una scelta dell'utente: il campo deve restare vuoto al caricamento.
+  function proponiIngresso(){
+    if(el('ingresso').value){ return false; }
+    el('ingresso').value = INGRESSO_DEF;
+    calcola();
+    return true;
+  }
+
+  el('ingresso').addEventListener('pointerdown', proponiIngresso);
+  el('ingresso').addEventListener('keydown', function(e){
+    // il primo tasto deve fermarsi alle 8:00, non incrementarle
+    if(/^(Arrow(Up|Down)|Page(Up|Down))$/.test(e.key) && proponiIngresso()){
+      e.preventDefault();
+    }
+  });
 
   el('adesso').addEventListener('click', function(){
     el('uscita').value = oraCorrente();
