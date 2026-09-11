@@ -67,8 +67,9 @@ Esempi con ingresso alle `08:00`:
 | 9:00 | 9:30 | 17:30 | intero |
 | 10:45 | 11:15 | 19:15 | intero |
 
-Se l'uscita e anteriore all'ingresso il turno e considerato a cavallo della
-mezzanotte, e gli orari proposti portano il suffisso `+1g`.
+L'uscita non puo essere anteriore all'ingresso: in quel caso il campo viene
+segnalato in rosso e il calcolo non parte. Gli orari proposti che cadono dopo la
+mezzanotte portano il suffisso `+1g`.
 
 ## Dettagli tecnici
 

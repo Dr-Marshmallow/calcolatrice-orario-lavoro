@@ -10,6 +10,7 @@
     --bg:#f4f5f7; --card:#ffffff; --ink:#15181d; --muted:#697386;
     --line:#e3e6ec; --accent:#2f6df6;
     --ok:#1f8a4c; --ok-soft:#e4f5eb; --warn:#a4690a; --warn-soft:#fdf1dc;
+    --err:#c8322b;
     --radius:14px;
   }
   @media (prefers-color-scheme: dark){
@@ -17,6 +18,7 @@
       --bg:#111318; --card:#1a1d24; --ink:#eef1f6; --muted:#98a1b3;
       --line:#2a2f39; --accent:#6d9bff;
       --ok:#5fd08c; --ok-soft:#12301f; --warn:#e8b45c; --warn-soft:#332612;
+      --err:#ff7a70;
     }
   }
   *{box-sizing:border-box}
@@ -47,6 +49,8 @@
     font-size:20px; font-variant-numeric:tabular-nums; font-weight:600;
   }
   input:focus{outline:2px solid var(--accent); outline-offset:1px; border-color:transparent}
+  input[aria-invalid=true]{border-color:var(--err)}
+  input[aria-invalid=true]:focus{outline-color:var(--err); border-color:transparent}
 
   .now{
     font:inherit; font-size:12px; font-weight:700; color:var(--accent);
@@ -81,6 +85,7 @@
   .out-main .k{font-size:13px; font-weight:600; color:var(--muted)}
   .out-main .v{font-size:38px; font-weight:700; letter-spacing:-.03em; font-variant-numeric:tabular-nums; line-height:1}
   .out-main .v.vuoto{font-size:19px; font-weight:600; color:var(--muted); letter-spacing:0}
+  .out-main .v.err{color:var(--err)}
   .out-main .v.pos{color:var(--ok)}
   .out-main .v.neg{color:var(--warn)}
 
@@ -351,8 +356,14 @@
     var start = parseOra(el('ingresso').value);
     var end   = parseOra(el('uscita').value);
 
+    // l'uscita non puo precedere l'ingresso: il min guida il timepicker,
+    // ma un orario scritto a mano, o un ingresso spostato dopo, va comunque respinto
+    var anticipata = start !== null && end !== null && end < start;
+    el('uscita').min = start === null ? '' : el('ingresso').value;
+    el('uscita').setAttribute('aria-invalid', anticipata ? 'true' : 'false');
+
     // i valori che non si possono ancora calcolare restano visibili ma smorzati
-    document.body.classList.toggle('attesa', start === null || end === null);
+    document.body.classList.toggle('attesa', start === null || end === null || anticipata);
     document.body.classList.toggle('attesa-orari', start === null);
 
     // senza ingresso non c'e nessun orario da proporre
@@ -370,9 +381,13 @@
       return;
     }
 
-    // uscita anteriore all'ingresso: turno a cavallo della mezzanotte
+    if(anticipata){
+      resetStato("l'uscita precede l'ingresso");
+      el('extra').classList.add('err');
+      return;
+    }
+
     var perm = end - start;
-    if(perm < 0){ perm += GIORNO; }
 
     var lav   = lavoroDa(perm);
     var pausa = perm - lav;
