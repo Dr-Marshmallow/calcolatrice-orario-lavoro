@@ -1,5 +1,7 @@
 # Calcolatrice Oraria
 
+**[▶ Try now](https://dr-marshmallow.github.io/calcolatrice-orario-lavoro)**
+
 Pagina web in file singolo, senza dipendenze, per sapere a colpo d'occhio quanto
 straordinario hai fatto, che buono pasto hai maturato e a che ora devi uscire per
 ottenerlo.
