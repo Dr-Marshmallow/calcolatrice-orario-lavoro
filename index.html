@@ -9,27 +9,26 @@
   :root{
     --bg:#f4f5f7; --card:#ffffff; --ink:#15181d; --muted:#697386;
     --line:#e3e6ec; --accent:#2f6df6;
-    --ok:#1f8a4c; --ok-soft:#e4f5eb; --warn:#a4690a; --warn-soft:#fdf1dc;
-    --err:#c8322b;
+    --ok:#1f8a4c; --warn:#a4690a; --err:#c8322b;
     --radius:14px;
   }
   @media (prefers-color-scheme: dark){
     :root{
       --bg:#111318; --card:#1a1d24; --ink:#eef1f6; --muted:#98a1b3;
       --line:#2a2f39; --accent:#6d9bff;
-      --ok:#5fd08c; --ok-soft:#12301f; --warn:#e8b45c; --warn-soft:#332612;
-      --err:#ff7a70;
+      --ok:#5fd08c; --warn:#e8b45c; --err:#ff7a70;
     }
   }
   *{box-sizing:border-box}
   body{
-    margin:0; padding:24px 16px 48px; background:var(--bg); color:var(--ink);
+    margin:0; padding:24px 16px 80px; background:var(--bg); color:var(--ink);
     font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     -webkit-font-smoothing:antialiased;
+    min-height:100vh; min-height:100dvh; display:flex;
   }
-  .app{max-width:520px; margin:0 auto; display:flex; flex-direction:column; gap:16px}
-  header h1{margin:0; font-size:22px; letter-spacing:-.02em}
-  header p{margin:4px 0 0; color:var(--muted); font-size:14px}
+  /* il margin:auto centra nello spazio che resta: il padding asimmetrico tiene le
+     sezioni un po sopra la meta esatta, e su schermi bassi si azzera senza tagliare */
+  .app{max-width:520px; width:100%; margin:auto; display:flex; flex-direction:column; gap:16px}
 
   .sub{font-size:12px; color:var(--muted)}
 
@@ -81,7 +80,6 @@
 
   .out{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
   .out-main{padding:18px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
-  .out-main .n{display:flex; flex-direction:column; gap:1px}
   .out-main .k{font-size:13px; font-weight:600; color:var(--muted)}
   .out-main .v{font-size:38px; font-weight:700; letter-spacing:-.03em; font-variant-numeric:tabular-nums; line-height:1}
   .out-main .v.vuoto{font-size:19px; font-weight:600; color:var(--muted); letter-spacing:0}
@@ -89,58 +87,32 @@
   .out-main .v.pos{color:var(--ok)}
   .out-main .v.neg{color:var(--warn)}
 
-  .stats{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border-top:1px solid var(--line)}
-  .stat{padding:13px 14px; border-right:1px solid var(--line)}
+  /* le tre colonne restano tre a ogni larghezza; il subgrid allinea titolo, orario
+     e stato tra una colonna e l'altra anche quando un titolo va a capo */
+  .stats{display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+         grid-template-rows:auto auto auto; border-top:1px solid var(--line)}
+  .stat{display:grid; grid-row:span 3; grid-template-rows:subgrid;
+        padding:13px 14px; border-right:1px solid var(--line)}
   .stat:last-child{border-right:0}
   .stat .k{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700}
-  .stat .v{font-size:16px; font-weight:650; font-variant-numeric:tabular-nums; margin-top:3px}
-
-  .buono{display:flex; align-items:center; gap:10px; padding:14px 18px; border-top:1px solid var(--line); font-weight:600}
-  .buono .dot{width:9px; height:9px; border-radius:50%; flex:none}
-  .buono .amt{margin-left:auto; font-variant-numeric:tabular-nums}
-  .buono.full{background:var(--ok-soft); color:var(--ok)}
-  .buono.full .dot{background:var(--ok)}
-  .buono.part{background:var(--warn-soft); color:var(--warn)}
-  .buono.part .dot{background:var(--warn)}
-  .buono.none{color:var(--muted)}
-  .buono.none .dot{background:var(--muted)}
-
-  .soglie{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px 18px}
-  .soglie h2{margin:0 0 4px; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted)}
-  .row{display:flex; align-items:flex-start; gap:12px; padding:10px 0}
-  .row + .row{border-top:1px dashed var(--line)}
-  .row .n{display:flex; flex-direction:column; gap:1px; min-width:0}
-  .row .n .k{font-size:14px; font-weight:600}
-  .row .t{margin-left:auto; display:flex; flex-direction:column; gap:1px;
-          text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums}
-  .row .t .ora{font-size:15px; font-weight:700}
+  .stat .ora{font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:4px}
+  .stat .sub{font-variant-numeric:tabular-nums; margin-top:2px}
   .g{font-size:.72em; font-weight:600; margin-left:1px}  /* suffisso +1g */
-  .row.hit .n .k, .row.hit .t .ora, .row.hit .t .sub{color:var(--ok)}
+  .stat.hit .k, .stat.hit .ora, .stat.hit .sub{color:var(--ok)}
 
   @media (max-width:420px){
-    .stats{grid-template-columns:1fr}
-    .stat{display:flex; align-items:baseline; justify-content:space-between; gap:12px;
-          border-right:0; border-bottom:1px solid var(--line)}
-    .stat:last-child{border-bottom:0}
-    .stat .v{margin-top:0}
+    .stat{padding:12px 9px}
+    .stat .k{letter-spacing:.02em}
   }
 
   /* in attesa dei dati: i valori sono segnaposto, le etichette restano leggibili */
-  .stat .v, .buono, .row .t{transition:opacity .15s}
-  .attesa .stat .v, .attesa .buono{opacity:.4}
-  .attesa-orari .row .t{opacity:.4}
-
-  .note{color:var(--muted); font-size:12.5px; line-height:1.6; padding:0 4px; margin:0}
-  .note b{color:var(--ink); font-weight:600}
+  .stat .ora, .stat .sub{transition:opacity .15s}
+  .attesa .stat .sub{opacity:.4}
+  .attesa-orari .stat .ora{opacity:.4}
 </style>
 </head>
 <body>
 <main class="app">
-
-  <header>
-    <h1>Calcolatrice Oraria</h1>
-    <p>Straordinario, buono pasto e orari di uscita</p>
-  </header>
 
   <section class="card">
     <div class="orari">
@@ -159,7 +131,7 @@
     </div>
 
     <div class="field">
-      <span class="lbl" id="lblTurno">Turno teorico</span>
+      <span class="lbl" id="lblTurno">Turno</span>
       <div class="seg" role="radiogroup" aria-labelledby="lblTurno">
         <input type="radio" name="turno" id="t6" value="360" checked><label for="t6">Corta</label>
         <input type="radio" name="turno" id="t712" value="432"><label for="t712">7:12</label>
@@ -170,62 +142,30 @@
 
   <section class="out">
     <div class="out-main">
-      <span class="n">
-        <span class="k">Straordinario</span>
-        <span class="sub" id="kTurno">&nbsp;</span>
-      </span>
+      <span class="k">Straordinario</span>
       <span class="v" id="extra" role="status">--:--</span>
     </div>
+    <!-- ogni colonna e un traguardo: titolo, orario di uscita, quanto manca.
+         I titoli dei buoni li scrive lo script a partire da BUONI, cosi importi
+         e soglie stanno in un posto solo -->
     <div class="stats">
-      <div class="stat"><div class="k">Permanenza</div><div class="v" id="permanenza">&mdash;</div></div>
-      <div class="stat"><div class="k">Lavoro eff.</div><div class="v" id="lavoro">&mdash;</div></div>
-      <div class="stat"><div class="k">Pausa</div><div class="v" id="pausa">&mdash;</div></div>
-    </div>
-    <div class="buono none" id="buono">
-      <span class="dot" aria-hidden="true"></span><span id="buonoTxt">Nessun buono pasto</span><span class="amt" id="buonoAmt"></span>
-    </div>
-  </section>
-
-  <section class="soglie">
-    <h2>Orari di uscita</h2>
-    <!-- .k e .sub delle righe dei buoni sono scritti dallo script a partire da
-         BUONI, cosi importi e soglie stanno in un posto solo -->
-    <div class="row" id="rowT">
-      <span class="n">
-        <span class="k">Turno teorico</span>
-        <span class="sub"></span>
-      </span>
-      <span class="t">
-        <span class="ora">--:--</span>
-        <span class="sub">&mdash;</span>
-      </span>
-    </div>
-    <div class="row" id="rowP">
-      <span class="n">
-        <span class="k"></span>
-        <span class="sub"></span>
-      </span>
-      <span class="t">
-        <span class="ora">--:--</span>
-        <span class="sub">&mdash;</span>
-      </span>
-    </div>
-    <div class="row" id="rowC">
-      <span class="n">
-        <span class="k"></span>
-        <span class="sub"></span>
-      </span>
-      <span class="t">
-        <span class="ora">--:--</span>
-        <span class="sub">&mdash;</span>
-      </span>
+      <div class="stat" id="rowT">
+        <div class="k">Turno</div>
+        <div class="ora">--:--</div>
+        <div class="sub">&mdash;</div>
+      </div>
+      <div class="stat" id="rowP">
+        <div class="k"></div>
+        <div class="ora">--:--</div>
+        <div class="sub">&mdash;</div>
+      </div>
+      <div class="stat" id="rowC">
+        <div class="k"></div>
+        <div class="ora">--:--</div>
+        <div class="sub">&mdash;</div>
+      </div>
     </div>
   </section>
-
-  <p class="note">
-    <b>Pausa pranzo:</b> raggiunte le <b>6:30</b> di permanenza, 30 minuti vengono scalati e non
-    contano come lavoro. Fino a 6:29 la permanenza vale interamente come lavoro effettivo.
-  </p>
 
 </main>
 
@@ -239,8 +179,8 @@
   // I buoni pasto, dal piu basso al piu alto: unica fonte di soglie, importi e nomi.
   // 'lavoro' e il lavoro effettivo richiesto, la permanenza necessaria si ricava.
   var BUONI = [
-    { riga:'rowP', lavoro:420, importo:'5,60 €', nome:'Buono pasto parziale', classe:'part' },
-    { riga:'rowC', lavoro:540, importo:'7,00 €', nome:'Buono pasto intero',   classe:'full' }
+    { riga:'rowP', lavoro:420, importo:'5,60 €', nome:'Buono pasto' },
+    { riga:'rowC', lavoro:540, importo:'7,00 €', nome:'Buono pasto' }
   ];
 
   function el(id){ return document.getElementById(id); }
@@ -270,30 +210,23 @@
   // lavoro effettivo desiderato -> permanenza necessaria
   function permanenzaPer(l){ return l < SOGLIA_PAUSA ? l : l + PAUSA; }
 
-  // la regola di un traguardo, come compare sotto il suo nome
-  function regolaDi(lavoro){
-    return fmtDurata(lavoro) + ' di lavoro · ' + fmtDurata(permanenzaPer(lavoro)) + ' in sede';
-  }
-
-  // gli elementi di una riga degli "Orari di uscita", presi dalla sua struttura
+  // gli elementi di una colonna, presi dalla sua struttura
   function riga(id){
     var r = el(id);
-    return { row:    r,
-             nome:   r.querySelector('.n .k'),
-             regola: r.querySelector('.n .sub'),
-             ora:    r.querySelector('.t .ora'),
-             stato:  r.querySelector('.t .sub') };
+    return { row:   r,
+             nome:  r.querySelector('.k'),
+             ora:   r.querySelector('.ora'),
+             stato: r.querySelector('.sub') };
   }
 
   var rigaTurno = riga('rowT');
   var RIGHE = [rigaTurno];
 
-  // la parte fissa delle righe dei buoni si scrive una volta sola, da BUONI
+  // il titolo delle colonne dei buoni si scrive una volta sola, da BUONI
   BUONI.forEach(function(b){
     b.perm = permanenzaPer(b.lavoro);
     b.el = riga(b.riga);
-    b.el.nome.textContent   = b.nome + ' · ' + b.importo;
-    b.el.regola.textContent = regolaDi(b.lavoro);
+    b.el.nome.textContent = b.nome + ' ' + b.importo;
     RIGHE.push(b.el);
   });
 
@@ -310,13 +243,12 @@
     }
   }
 
-  // stato di una riga: quanto manca in sede, o traguardo gia raggiunto.
+  // stato di una colonna: quanto manca in sede, o traguardo gia raggiunto.
   // Il confronto e sulla permanenza, cosi la mezz'ora di pausa e gia dentro l'attesa.
   function segna(r, manca){
     var fatto = manca <= 0;
     r.stato.textContent = fatto ? '✓ raggiunto' : 'tra ' + fmtDurata(manca);
     r.row.classList.toggle('hit', fatto);
-    return fatto;
   }
 
   // un campo vuoto non e un errore da segnalare, e solo un dato che manca
@@ -325,21 +257,11 @@
   }
 
   function turnoSel(){ return document.querySelector('input[name=turno]:checked'); }
-  function nomeTurno(r){ return document.querySelector('label[for="' + r.id + '"]').textContent; }
-
-  // b e il buono maturato, oppure null
-  function mostraBuono(b){
-    el('buono').className = 'buono ' + (b ? b.classe : 'none');
-    el('buonoTxt').textContent = b ? b.nome : 'Nessun buono pasto';
-    el('buonoAmt').textContent = b ? b.importo : '';
-  }
 
   // azzera lo stato attuale; gli orari di uscita restano gestiti da calcola()
   function resetStato(msg){
     el('extra').className = 'v vuoto';
     el('extra').textContent = msg;
-    ['permanenza', 'lavoro', 'pausa'].forEach(function(id){ el(id).textContent = '—'; });
-    mostraBuono(null);
     RIGHE.forEach(function(r){
       r.stato.textContent = '—';
       r.row.classList.remove('hit');
@@ -347,11 +269,8 @@
   }
 
   function calcola(){
-    var radio = turnoSel();
-    var turno = +radio.value;
+    var turno = +turnoSel().value;
     var permTurno = permanenzaPer(turno);
-    el('kTurno').textContent = 'sul turno ' + nomeTurno(radio);
-    rigaTurno.regola.textContent = regolaDi(turno);
 
     var start = parseOra(el('ingresso').value);
     var end   = parseOra(el('uscita').value);
@@ -387,28 +306,15 @@
       return;
     }
 
-    var perm = end - start;
-
-    var lav   = lavoroDa(perm);
-    var pausa = perm - lav;
-    var extra = lav - turno;
-
-    el('permanenza').textContent = fmtDurata(perm);
-    el('lavoro').textContent     = fmtDurata(lav);
-    el('pausa').textContent      = pausa ? '−' + pausa + 'm' : '0m';
+    var perm  = end - start;
+    var extra = lavoroDa(perm) - turno;
 
     el('extra').className = 'v ' + (extra > 0 ? 'pos' : extra < 0 ? 'neg' : '');
     el('extra').textContent = (extra > 0 ? '+' : extra < 0 ? '−' : '')
                             + fmtDurata(Math.abs(extra));
 
     segna(rigaTurno, permTurno - perm);
-
-    // vince il buono piu alto raggiunto: BUONI e in ordine crescente
-    var maturato = null;
-    BUONI.forEach(function(b){
-      if(segna(b.el, b.perm - perm)){ maturato = b; }
-    });
-    mostraBuono(maturato);
+    BUONI.forEach(function(b){ segna(b.el, b.perm - perm); });
   }
 
   document.addEventListener('input', calcola);
