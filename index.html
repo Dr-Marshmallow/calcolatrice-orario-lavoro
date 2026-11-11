@@ -87,16 +87,28 @@
   .out-main .v.pos{color:var(--ok)}
   .out-main .v.neg{color:var(--warn)}
 
-  /* le tre colonne restano tre a ogni larghezza; il subgrid allinea titolo, orario
-     e stato tra una colonna e l'altra anche quando un titolo va a capo */
+  /* ogni colonna ha la sua barra, tra l'orario di uscita e quanto manca: si riempie
+     dall'ingresso fino all'obiettivo della colonna, che e la fine della barra */
+  .barra{margin-top:9px}
+  .barra-track{height:8px; border-radius:99px; overflow:hidden;
+               background:var(--bg); border:1px solid var(--line)}
+  .barra-fill{height:100%; width:0; border-radius:99px; background:var(--accent);
+              transition:width .3s ease, background-color .2s}
+  .barra.hit .barra-fill{background:var(--ok)}
+  @media (prefers-reduced-motion: reduce){
+    .barra-fill{transition:none}
+  }
+
+  /* le tre colonne restano tre a ogni larghezza; il subgrid allinea titolo, orario,
+     barra e stato tra una colonna e l'altra anche quando un titolo va a capo */
   .stats{display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
-         grid-template-rows:auto auto auto; border-top:1px solid var(--line)}
-  .stat{display:grid; grid-row:span 3; grid-template-rows:subgrid;
+         grid-template-rows:auto auto auto auto; border-top:1px solid var(--line)}
+  .stat{display:grid; grid-row:span 4; grid-template-rows:subgrid;
         padding:13px 14px; border-right:1px solid var(--line)}
   .stat:last-child{border-right:0}
   .stat .k{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700}
   .stat .ora{font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:4px}
-  .stat .sub{font-variant-numeric:tabular-nums; margin-top:2px}
+  .stat .sub{font-variant-numeric:tabular-nums; margin-top:5px}
   .g{font-size:.72em; font-weight:600; margin-left:1px}  /* suffisso +1g */
   .stat.hit .k, .stat.hit .ora, .stat.hit .sub{color:var(--ok)}
 
@@ -145,9 +157,9 @@
       <span class="k">Straordinario</span>
       <span class="v" id="extra" role="status">--:--</span>
     </div>
-    <!-- ogni colonna e un traguardo: titolo, orario di uscita, quanto manca.
-         I titoli dei buoni li scrive lo script a partire da BUONI, cosi importi
-         e soglie stanno in un posto solo -->
+    <!-- ogni colonna e un traguardo: titolo, orario di uscita, barra, quanto manca.
+         I titoli dei buoni e le barre li aggiunge lo script, cosi importi e soglie
+         stanno in un posto solo (BUONI) -->
     <div class="stats">
       <div class="stat" id="rowT">
         <div class="k">Turno</div>
@@ -210,13 +222,29 @@
   // lavoro effettivo desiderato -> permanenza necessaria
   function permanenzaPer(l){ return l < SOGLIA_PAUSA ? l : l + PAUSA; }
 
-  // gli elementi di una colonna, presi dalla sua struttura
+  // una barra di avanzamento vuota, pronta da mettere in una colonna
+  function nuovaBarra(){
+    var b = document.createElement('div');
+    b.className = 'barra';
+    b.setAttribute('role', 'progressbar');
+    b.setAttribute('aria-valuemin', '0');
+    b.setAttribute('aria-valuemax', '100');
+    b.setAttribute('aria-valuenow', '0');
+    b.innerHTML = '<div class="barra-track"><div class="barra-fill"></div></div>';
+    return b;
+  }
+
+  // gli elementi di una colonna, presi dalla sua struttura; la barra va
+  // tra l'orario di uscita e lo stato, che ne dice il valore a parole
   function riga(id){
-    var r = el(id);
-    return { row:   r,
-             nome:  r.querySelector('.k'),
-             ora:   r.querySelector('.ora'),
-             stato: r.querySelector('.sub') };
+    var r = el(id), stato = r.querySelector('.sub'), barra = nuovaBarra();
+    r.insertBefore(barra, stato);
+    return { row:    r,
+             nome:   r.querySelector('.k'),
+             ora:    r.querySelector('.ora'),
+             stato:  stato,
+             barra:  barra,
+             riempi: barra.querySelector('.barra-fill') };
   }
 
   var rigaTurno = riga('rowT');
@@ -229,6 +257,17 @@
     b.el.nome.textContent = b.nome + ' ' + b.importo;
     RIGHE.push(b.el);
   });
+
+  // ogni barra prende il nome dalla sua colonna, per i lettori di schermo
+  RIGHE.forEach(function(r){ r.barra.setAttribute('aria-label', r.nome.textContent); });
+
+  // riempie la barra di una colonna; la frazione si ferma a 1 a obiettivo raggiunto
+  function riempi(r, frazione, testo){
+    frazione = Math.min(frazione, 1);
+    r.riempi.style.width = (frazione * 100) + '%';
+    r.barra.setAttribute('aria-valuenow', Math.round(frazione * 100));
+    r.barra.setAttribute('aria-valuetext', testo);
+  }
 
   // scrive un orario, col suffisso +Ng quando cade nei giorni successivi
   function scriviOra(elem, min){
@@ -245,10 +284,13 @@
 
   // stato di una colonna: quanto manca in sede, o traguardo gia raggiunto.
   // Il confronto e sulla permanenza, cosi la mezz'ora di pausa e gia dentro l'attesa.
-  function segna(r, manca){
-    var fatto = manca <= 0;
+  function segna(r, perm, obiettivo){
+    var manca = obiettivo - perm, fatto = manca <= 0;
     r.stato.textContent = fatto ? '✓ raggiunto' : 'tra ' + fmtDurata(manca);
     r.row.classList.toggle('hit', fatto);
+    r.barra.classList.toggle('hit', fatto);
+    riempi(r, perm / obiettivo,
+           fmtDurata(Math.min(perm, obiettivo)) + ' di permanenza su ' + fmtDurata(obiettivo));
   }
 
   // un campo vuoto non e un errore da segnalare, e solo un dato che manca
@@ -265,6 +307,8 @@
     RIGHE.forEach(function(r){
       r.stato.textContent = '—';
       r.row.classList.remove('hit');
+      r.barra.classList.remove('hit');
+      riempi(r, 0, 'in attesa degli orari');
     });
   }
 
@@ -313,8 +357,8 @@
     el('extra').textContent = (extra > 0 ? '+' : extra < 0 ? '−' : '')
                             + fmtDurata(Math.abs(extra));
 
-    segna(rigaTurno, permTurno - perm);
-    BUONI.forEach(function(b){ segna(b.el, b.perm - perm); });
+    segna(rigaTurno, perm, permTurno);
+    BUONI.forEach(function(b){ segna(b.el, perm, b.perm); });
   }
 
   document.addEventListener('input', calcola);
