@@ -1,4 +1,4 @@
-# Calcolatrice Oraria
+# Calcolatrice Orario Lavoro
 
 **[▶ Try now](https://dr-marshmallow.github.io/calcolatrice-orario-lavoro)**
 
