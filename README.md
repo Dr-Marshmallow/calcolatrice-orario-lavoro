@@ -80,6 +80,22 @@ mezzanotte portano il suffisso `+1g`.
 In alto a destra c'e un pulsante per passare dal tema chiaro a quello scuro e
 viceversa. 
 
+## L'ingresso di oggi
+
+L'orario di ingresso viene salvato nel browser (`localStorage`) insieme alla data,
+cosi non si perde se ricarichi la pagina o se il telefono chiude la scheda.
+
+- Riaprendo la pagina lo stesso giorno, l'ingresso torna al suo posto e tutto si
+  ricalcola subito; l'uscita riparte comunque dall'ora corrente.
+- Un ingresso di un altro giorno viene cancellato alla prima apertura: il campo
+  torna vuoto.
+- Se la pagina e rimasta aperta dal giorno prima, quando ci torni riparte come
+  un'apertura nuova: ingresso vuoto e uscita sull'ora corrente.
+- Svuotando il campo si cancella anche il salvataggio.
+
+Viene salvato un solo orario, quello del giorno: non si accumula nessuno storico.
+Come il tema, resta solo sul browser e sul dispositivo in cui l'hai inserito.
+
 ## Dettagli tecnici
 
 Tutto sta in `index.html`: markup, stile e logica. Nessuna libreria, nessun build,

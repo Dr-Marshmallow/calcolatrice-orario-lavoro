@@ -427,6 +427,7 @@
   function proponiIngresso(){
     if(el('ingresso').value){ return false; }
     el('ingresso').value = INGRESSO_DEF;
+    salvaIngresso();
     calcola();
     return true;
   }
@@ -443,6 +444,59 @@
     el('uscita').value = oraCorrente();
     calcola();
   });
+
+  // ---- ingresso di oggi ----
+  // L'ingresso resta nel browser (localStorage) insieme alla data, cosi sopravvive
+  // a una ricarica o alla chiusura della scheda. Vale solo per il giorno in cui e
+  // stato inserito: un salvataggio di un altro giorno si scarta.
+  var CHIAVE_INGRESSO = 'ingresso';
+
+  function oggi(){
+    var d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+
+  // il giorno a cui si riferisce quello che c'e sulla pagina
+  var giornoPagina = oggi();
+
+  function salvaIngresso(){
+    var v = el('ingresso').value;
+    giornoPagina = oggi();  // chi sta scrivendo adesso, lavora oggi
+    try{
+      if(parseOra(v) === null){ localStorage.removeItem(CHIAVE_INGRESSO); }
+      else{ localStorage.setItem(CHIAVE_INGRESSO, JSON.stringify({ giorno: giornoPagina, ora: v })); }
+    }catch(e){}
+  }
+
+  // rimette nel campo l'ingresso salvato se e di oggi, altrimenti lo cancella
+  function ripristinaIngresso(){
+    var s = null;
+    try{ s = JSON.parse(localStorage.getItem(CHIAVE_INGRESSO)); }catch(e){}
+    if(s && s.giorno === oggi() && parseOra(s.ora) !== null){
+      el('ingresso').value = s.ora;
+      return;
+    }
+    try{ localStorage.removeItem(CHIAVE_INGRESSO); }catch(e){}
+  }
+
+  el('ingresso').addEventListener('input', salvaIngresso);
+  el('ingresso').addEventListener('change', salvaIngresso);
+
+  // Una pagina rimasta aperta da ieri (tipico sul telefono) al ritorno riparte
+  // come un'apertura nuova: ingresso di oggi se c'e, altrimenti vuoto, e uscita
+  // all'ora corrente
+  function controllaGiorno(){
+    if(giornoPagina === oggi()){ return; }
+    giornoPagina = oggi();
+    el('ingresso').value = '';
+    ripristinaIngresso();
+    el('uscita').value = oraCorrente();
+    calcola();
+  }
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden){ controllaGiorno(); }
+  });
+  window.addEventListener('pageshow', controllaGiorno);
 
   // ---- tema ----
   // Di base la pagina segue il sistema. Un clic sceglie l'altro tema e lo ricorda;
@@ -494,7 +548,8 @@
 
   aggiornaTastoTema();
 
-  // l'uscita parte dall'ora corrente
+  // l'ingresso torna se e di oggi, l'uscita parte dall'ora corrente
+  ripristinaIngresso();
   el('uscita').value = oraCorrente();
   calcola();
 })();
