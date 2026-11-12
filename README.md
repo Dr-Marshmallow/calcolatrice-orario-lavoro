@@ -75,6 +75,11 @@ L'uscita non puo essere anteriore all'ingresso: in quel caso il campo viene
 segnalato in rosso e il calcolo non parte. Gli orari proposti che cadono dopo la
 mezzanotte portano il suffisso `+1g`.
 
+## Tema chiaro/scuro
+
+In alto a destra c'e un pulsante per passare dal tema chiaro a quello scuro e
+viceversa. 
+
 ## Dettagli tecnici
 
 Tutto sta in `index.html`: markup, stile e logica. Nessuna libreria, nessun build,
