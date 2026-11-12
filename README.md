@@ -80,10 +80,12 @@ mezzanotte portano il suffisso `+1g`.
 In alto a destra c'e un pulsante per passare dal tema chiaro a quello scuro e
 viceversa. 
 
-## L'ingresso di oggi
+## Ingresso e turno salvati
 
-L'orario di ingresso viene salvato nel browser (`localStorage`) insieme alla data,
-cosi non si perde se ricarichi la pagina o se il telefono chiude la scheda.
+L'orario di ingresso e il turno vengono salvati nel browser (`localStorage`),
+cosi non si perdono se ricarichi la pagina o se il telefono chiude la scheda.
+
+**Ingresso** - vale solo per il giorno in cui l'hai inserito:
 
 - Riaprendo la pagina lo stesso giorno, l'ingresso torna al suo posto e tutto si
   ricalcola subito; l'uscita riparte comunque dall'ora corrente.
@@ -93,8 +95,12 @@ cosi non si perde se ricarichi la pagina o se il telefono chiude la scheda.
   un'apertura nuova: ingresso vuoto e uscita sull'ora corrente.
 - Svuotando il campo si cancella anche il salvataggio.
 
-Viene salvato un solo orario, quello del giorno: non si accumula nessuno storico.
-Come il tema, resta solo sul browser e sul dispositivo in cui l'hai inserito.
+**Turno** - non scade: resta l'ultimo scelto finche non lo cambi, anche nei giorni
+successivi, perche di solito si ripete. Se i turni nel markup cambiano e quello
+salvato non esiste piu, si torna a **Corta**.
+
+Viene salvato un solo ingresso, quello del giorno: non si accumula nessuno storico.
+Come il tema, tutto resta solo sul browser e sul dispositivo in cui l'hai inserito.
 
 ## Dettagli tecnici
 

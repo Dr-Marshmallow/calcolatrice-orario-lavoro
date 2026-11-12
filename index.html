@@ -498,6 +498,32 @@
   });
   window.addEventListener('pageshow', controllaGiorno);
 
+  // ---- turno ----
+  // L'ultimo turno scelto resta salvato finche non lo cambi, anche nei giorni
+  // successivi: di solito si ripete, e cosi non va riselezionato ogni mattina.
+  var CHIAVE_TURNO = 'turno';
+  var RADIO_TURNO = document.querySelectorAll('input[name=turno]');
+
+  function salvaTurno(){
+    try{ localStorage.setItem(CHIAVE_TURNO, turnoSel().value); }catch(e){}
+  }
+
+  // rimette il turno salvato; un valore che non corrisponde piu a nessun
+  // pulsante (per esempio dopo aver cambiato i turni nel markup) si scarta
+  function ripristinaTurno(){
+    var v = null;
+    try{ v = localStorage.getItem(CHIAVE_TURNO); }catch(e){}
+    if(v === null){ return; }
+    for(var i = 0; i < RADIO_TURNO.length; i++){
+      if(RADIO_TURNO[i].value === v){ RADIO_TURNO[i].checked = true; return; }
+    }
+    try{ localStorage.removeItem(CHIAVE_TURNO); }catch(e){}
+  }
+
+  for(var i = 0; i < RADIO_TURNO.length; i++){
+    RADIO_TURNO[i].addEventListener('change', salvaTurno);
+  }
+
   // ---- tema ----
   // Di base la pagina segue il sistema. Un clic sceglie l'altro tema e lo ricorda;
   // se la scelta torna a coincidere col sistema la si dimentica, e la pagina
@@ -548,7 +574,8 @@
 
   aggiornaTastoTema();
 
-  // l'ingresso torna se e di oggi, l'uscita parte dall'ora corrente
+  // tornano l'ultimo turno e l'ingresso se e di oggi; l'uscita parte dall'ora corrente
+  ripristinaTurno();
   ripristinaIngresso();
   el('uscita').value = oraCorrente();
   calcola();
