@@ -134,15 +134,20 @@
   /* ogni colonna ha la sua barra, tra gli orari di uscita e quanto manca: si riempie
      dall'ingresso fino all'ultimo obiettivo della colonna, che e la fine della barra.
      Sopra il riempimento blu, la parte gia conquistata e verde */
-  .barra{margin-top:9px}
+  .barra{position:relative; margin-top:9px}
   .barra-track{position:relative; height:8px; border-radius:99px; overflow:hidden;
                background:var(--bg); border:1px solid var(--line)}
   .barra-fill, .barra-fatto{height:100%; width:0; border-radius:99px; transition:width .3s ease}
   .barra-fill{background:var(--accent)}
   .barra-fatto{position:absolute; left:0; top:0; background:var(--ok)}
-  /* tacca tra un traguardo e l'altro, nel colore della scheda: sembra un taglio nella barra */
-  .barra-tacca{position:absolute; top:0; bottom:0; width:2px; margin-left:-1px;
-               background:var(--card); z-index:1}
+  /* traguardo intermedio: un pallino che sporge dalla barra, staccato da un anello
+     nel colore della scheda; grigio finche non lo raggiungi, poi verde. Sta fuori
+     dalla traccia, che ha overflow:hidden e lo taglierebbe */
+  .barra-tacca{position:absolute; top:50%; width:14px; height:14px; margin:-7px 0 0 -7px;
+               border-radius:50%; background:var(--card); border:2px solid var(--muted);
+               box-shadow:0 0 0 2px var(--card); z-index:1;
+               transition:background-color .15s, border-color .15s}
+  .barra-tacca.presa{background:var(--ok); border-color:var(--ok)}
   @media (prefers-reduced-motion: reduce){
     .barra-fill, .barra-fatto{transition:none}
   }
@@ -326,7 +331,6 @@
     return { row:    r,
              nome:   r.querySelector('.k'),
              barra:  barra,
-             traccia: barra.querySelector('.barra-track'),
              riempi: barra.querySelector('.barra-fill'),
              fatto:  barra.querySelector('.barra-fatto') };
   }
@@ -361,10 +365,10 @@
     el('buoniStato').appendChild(b.stato);
 
     if(i < BUONI.length - 1){
-      var tacca = document.createElement('div');
-      tacca.className = 'barra-tacca';
-      tacca.style.left = ((i + 1) / BUONI.length * 100) + '%';
-      colBuoni.traccia.appendChild(tacca);
+      b.tacca = document.createElement('div');
+      b.tacca.className = 'barra-tacca';
+      b.tacca.style.left = ((i + 1) / BUONI.length * 100) + '%';
+      colBuoni.barra.appendChild(b.tacca);
     }
   });
 
@@ -436,6 +440,7 @@
         e.classList.toggle('spetta', spetta);
         e.classList.toggle('superato', superato);
       });
+      if(b.tacca){ b.tacca.classList.toggle('presa', i < presi); }
       b.imp.title = spetta ? 'Ti spetta questo buono'
                   : superato ? 'Sostituito dal buono da ' + BUONI[presi - 1].importo
                   : '';
