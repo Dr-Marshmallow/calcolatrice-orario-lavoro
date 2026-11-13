@@ -122,37 +122,68 @@
 
   .out{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
   .out-main{padding:18px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
-  .out-main .k{font-size:13px; font-weight:600; color:var(--muted)}
+  .out-main .k{font-size:18px; font-weight:600; color:var(--muted)}
   .out-main .v{font-size:38px; font-weight:700; letter-spacing:-.03em; font-variant-numeric:tabular-nums; line-height:1}
-  .out-main .v.vuoto{font-size:19px; font-weight:600; color:var(--muted); letter-spacing:0}
+  /* se il valore va a capo resta comunque a destra */
+  .out-main .v{margin-left:auto; text-align:right}
+  .out-main .v.vuoto{font-size:17px; font-weight:600; color:var(--muted); letter-spacing:0}
   .out-main .v.err{color:var(--err)}
   .out-main .v.pos{color:var(--ok)}
   .out-main .v.neg{color:var(--warn)}
 
-  /* ogni colonna ha la sua barra, tra l'orario di uscita e quanto manca: si riempie
-     dall'ingresso fino all'obiettivo della colonna, che e la fine della barra */
+  /* ogni colonna ha la sua barra, tra gli orari di uscita e quanto manca: si riempie
+     dall'ingresso fino all'ultimo obiettivo della colonna, che e la fine della barra.
+     Sopra il riempimento blu, la parte gia conquistata e verde */
   .barra{margin-top:9px}
-  .barra-track{height:8px; border-radius:99px; overflow:hidden;
+  .barra-track{position:relative; height:8px; border-radius:99px; overflow:hidden;
                background:var(--bg); border:1px solid var(--line)}
-  .barra-fill{height:100%; width:0; border-radius:99px; background:var(--accent);
-              transition:width .3s ease, background-color .2s}
-  .barra.hit .barra-fill{background:var(--ok)}
+  .barra-fill, .barra-fatto{height:100%; width:0; border-radius:99px; transition:width .3s ease}
+  .barra-fill{background:var(--accent)}
+  .barra-fatto{position:absolute; left:0; top:0; background:var(--ok)}
+  /* tacca tra un traguardo e l'altro, nel colore della scheda: sembra un taglio nella barra */
+  .barra-tacca{position:absolute; top:0; bottom:0; width:2px; margin-left:-1px;
+               background:var(--card); z-index:1}
   @media (prefers-reduced-motion: reduce){
-    .barra-fill{transition:none}
+    .barra-fill, .barra-fatto{transition:none}
   }
 
-  /* le tre colonne restano tre a ogni larghezza; il subgrid allinea titolo, orario,
-     barra e stato tra una colonna e l'altra anche quando un titolo va a capo */
+  /* la griglia ha tre colonne a ogni larghezza: il turno ne occupa una, i buoni due.
+     Il subgrid allinea titolo, orario, barra e stato tra le colonne anche quando
+     un testo va a capo */
   .stats{display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
          grid-template-rows:auto auto auto auto; border-top:1px solid var(--line)}
   .stat{display:grid; grid-row:span 4; grid-template-rows:subgrid;
         padding:13px 14px; border-right:1px solid var(--line)}
   .stat:last-child{border-right:0}
+  .stat.buoni{grid-column:span 2}
   .stat .k{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700}
   .stat .ora{font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:4px}
   .stat .sub{font-variant-numeric:tabular-nums; margin-top:5px}
   .g{font-size:.72em; font-weight:600; margin-left:1px}  /* suffisso +1g */
   .stat.hit .k, .stat.hit .ora, .stat.hit .sub{color:var(--ok)}
+
+  /* i buoni: un tratto di barra uguale per ciascuno, e sopra e sotto ogni tratto il
+     suo orario e il suo stato, allineati a destra cioe alla sua tacca */
+  .tappe{display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr)}
+  .tappe > *{text-align:right; padding-left:8px}
+  /* sotto ogni tratto: l'importo come pastiglia, e accanto quanto manca; se non
+     c'e spazio lo stato va sotto la pastiglia, mai dentro una delle due */
+  .tappe .sub{display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; gap:3px 6px}
+  .tappe .sub > *{white-space:nowrap}
+  .tappe .val:empty{display:none}
+
+  /* l'importo dice lo stato del buono:
+     - da raggiungere: contorno e testo smorzato
+     - spetta (il piu alto raggiunto): pieno, verde, con la spunta
+     - superato da uno piu alto: barrato, perche non si somma */
+  .imp{font-size:12px; font-weight:700; line-height:18px; padding:0 7px; border-radius:99px;
+       border:1px solid var(--line); color:var(--muted); transition:background-color .15s, color .15s}
+  .spetta .imp{background:var(--ok); border-color:var(--ok); color:var(--card)}
+  .spetta .imp::before{content:'✓ '}
+  .superato .imp{text-decoration:line-through; opacity:.75}
+  .tappe .ora.spetta{color:var(--ok)}
+  .tappe .ora.superato{color:var(--muted)}
+  .stat.buoni.preso .k{color:var(--ok)}
 
   @media (max-width:420px){
     .stat{padding:12px 9px}
@@ -160,8 +191,8 @@
   }
 
   /* in attesa dei dati: i valori sono segnaposto, le etichette restano leggibili */
-  .stat .ora, .stat .sub{transition:opacity .15s}
-  .attesa .stat .sub{opacity:.4}
+  .stat .ora, .stat .val{transition:opacity .15s}
+  .attesa .stat .val{opacity:.4}
   .attesa-orari .stat .ora{opacity:.4}
 </style>
 </head>
@@ -213,24 +244,19 @@
       <span class="k">Straordinario</span>
       <span class="v" id="extra" role="status">--:--</span>
     </div>
-    <!-- ogni colonna e un traguardo: titolo, orario di uscita, barra, quanto manca.
-         I titoli dei buoni e le barre li aggiunge lo script, cosi importi e soglie
+    <!-- ogni colonna: titolo, orari di uscita, barra, quanto manca. Le barre, e gli
+         orari e gli stati dei buoni, li aggiunge lo script, cosi importi e soglie
          stanno in un posto solo (BUONI) -->
     <div class="stats">
       <div class="stat" id="rowT">
         <div class="k">Turno</div>
         <div class="ora">--:--</div>
-        <div class="sub">&mdash;</div>
+        <div class="sub val">&mdash;</div>
       </div>
-      <div class="stat" id="rowP">
-        <div class="k"></div>
-        <div class="ora">--:--</div>
-        <div class="sub">&mdash;</div>
-      </div>
-      <div class="stat" id="rowC">
-        <div class="k"></div>
-        <div class="ora">--:--</div>
-        <div class="sub">&mdash;</div>
+      <div class="stat buoni" id="rowB">
+        <div class="k">Buono pasto</div>
+        <div class="tappe" id="buoniOra"></div>
+        <div class="tappe" id="buoniStato"></div>
       </div>
     </div>
   </section>
@@ -244,11 +270,12 @@
   var SOGLIA_PAUSA = 390;  // 6:30 di permanenza
   var INGRESSO_DEF = '08:00';  // da dove parte la prima selezione dell'ingresso
 
-  // I buoni pasto, dal piu basso al piu alto: unica fonte di soglie, importi e nomi.
+  // I buoni pasto, dal piu basso al piu alto: unica fonte di soglie e importi.
   // 'lavoro' e il lavoro effettivo richiesto, la permanenza necessaria si ricava.
+  // Ne spetta uno solo, il piu alto raggiunto.
   var BUONI = [
-    { riga:'rowP', lavoro:420, importo:'5,60 €', nome:'Buono pasto' },
-    { riga:'rowC', lavoro:540, importo:'7,00 €', nome:'Buono pasto' }
+    { lavoro:420, importo:'5,60 €' },
+    { lavoro:540, importo:'7,00 €' }
   ];
 
   function el(id){ return document.getElementById(id); }
@@ -286,41 +313,72 @@
     b.setAttribute('aria-valuemin', '0');
     b.setAttribute('aria-valuemax', '100');
     b.setAttribute('aria-valuenow', '0');
-    b.innerHTML = '<div class="barra-track"><div class="barra-fill"></div></div>';
+    b.innerHTML = '<div class="barra-track"><div class="barra-fill"></div>'
+                + '<div class="barra-fatto"></div></div>';
     return b;
   }
 
-  // gli elementi di una colonna, presi dalla sua struttura; la barra va
-  // tra l'orario di uscita e lo stato, che ne dice il valore a parole
-  function riga(id){
-    var r = el(id), stato = r.querySelector('.sub'), barra = nuovaBarra();
-    r.insertBefore(barra, stato);
+  // gli elementi comuni di una colonna; la barra va sopra l'ultima riga,
+  // lo stato, che ne dice il valore a parole
+  function colonna(id){
+    var r = el(id), barra = nuovaBarra();
+    r.insertBefore(barra, r.lastElementChild);
     return { row:    r,
              nome:   r.querySelector('.k'),
-             ora:    r.querySelector('.ora'),
-             stato:  stato,
              barra:  barra,
-             riempi: barra.querySelector('.barra-fill') };
+             traccia: barra.querySelector('.barra-track'),
+             riempi: barra.querySelector('.barra-fill'),
+             fatto:  barra.querySelector('.barra-fatto') };
   }
 
-  var rigaTurno = riga('rowT');
-  var RIGHE = [rigaTurno];
+  var colTurno = colonna('rowT');
+  colTurno.ora = colTurno.row.querySelector('.ora');
+  colTurno.stato = colTurno.row.querySelector('.sub');
 
-  // il titolo delle colonne dei buoni si scrive una volta sola, da BUONI
-  BUONI.forEach(function(b){
+  // la colonna dei buoni ha una barra sola, divisa in un tratto uguale per buono:
+  // per ciascuno, l'orario sopra la fine del suo tratto, la tacca e lo stato sotto
+  var colBuoni = colonna('rowB');
+  BUONI.forEach(function(b, i){
     b.perm = permanenzaPer(b.lavoro);
-    b.el = riga(b.riga);
-    b.el.nome.textContent = b.nome + ' ' + b.importo;
-    RIGHE.push(b.el);
+
+    b.ora = document.createElement('div');
+    b.ora.className = 'ora';
+    b.ora.textContent = '--:--';
+    el('buoniOra').appendChild(b.ora);
+
+    // lo stato e 'importo + valore': l'importo e un'etichetta e resta leggibile
+    b.stato = document.createElement('div');
+    b.stato.className = 'sub';
+    var imp = b.imp = document.createElement('span');
+    imp.className = 'imp';
+    imp.textContent = b.importo;
+    b.val = document.createElement('span');
+    b.val.className = 'val';
+    b.val.textContent = '—';
+    b.stato.appendChild(imp);
+    b.stato.appendChild(document.createTextNode(' '));
+    b.stato.appendChild(b.val);
+    el('buoniStato').appendChild(b.stato);
+
+    if(i < BUONI.length - 1){
+      var tacca = document.createElement('div');
+      tacca.className = 'barra-tacca';
+      tacca.style.left = ((i + 1) / BUONI.length * 100) + '%';
+      colBuoni.traccia.appendChild(tacca);
+    }
   });
 
-  // ogni barra prende il nome dalla sua colonna, per i lettori di schermo
-  RIGHE.forEach(function(r){ r.barra.setAttribute('aria-label', r.nome.textContent); });
+  var COLONNE = [colTurno, colBuoni];
 
-  // riempie la barra di una colonna; la frazione si ferma a 1 a obiettivo raggiunto
-  function riempi(r, frazione, testo){
+  // ogni barra prende il nome dalla sua colonna, per i lettori di schermo
+  COLONNE.forEach(function(r){ r.barra.setAttribute('aria-label', r.nome.textContent); });
+
+  // riempie la barra di una colonna fino a 'frazione', e in verde fino a 'fatto',
+  // la parte gia conquistata; tutte e due sono frazioni della barra intera
+  function riempi(r, frazione, fatto, testo){
     frazione = Math.min(frazione, 1);
     r.riempi.style.width = (frazione * 100) + '%';
+    r.fatto.style.width = (Math.min(fatto, frazione) * 100) + '%';
     r.barra.setAttribute('aria-valuenow', Math.round(frazione * 100));
     r.barra.setAttribute('aria-valuetext', testo);
   }
@@ -344,9 +402,45 @@
     var manca = obiettivo - perm, fatto = manca <= 0;
     r.stato.textContent = fatto ? '✓ raggiunto' : 'tra ' + fmtDurata(manca);
     r.row.classList.toggle('hit', fatto);
-    r.barra.classList.toggle('hit', fatto);
-    riempi(r, perm / obiettivo,
+    riempi(r, perm / obiettivo, fatto ? 1 : 0,
            fmtDurata(Math.min(perm, obiettivo)) + ' di permanenza su ' + fmtDurata(obiettivo));
+  }
+
+  // stato della colonna dei buoni. Ogni tratto della barra va dal traguardo
+  // precedente (o dall'ingresso) al suo, e si riempie in proporzione al tempo passato
+  // tra i due; e verde fino all'ultimo buono raggiunto. Dei buoni raggiunti
+  // spetta solo il piu alto: gli altri risultano superati
+  function segnaBuoni(perm){
+    var n = BUONI.length, presi = 0, frazione = 0;
+    BUONI.forEach(function(b, i){
+      var manca = b.perm - perm, fatto = manca <= 0;
+      var da = i ? BUONI[i - 1].perm : 0, tratto = b.perm - da;
+      b.val.textContent = fatto ? '' : 'tra ' + fmtDurata(manca);
+      if(fatto){ presi = i + 1; }
+      frazione += (tratto > 0 ? Math.max(0, Math.min(1, (perm - da) / tratto)) : +fatto) / n;
+    });
+    statoBuoni(presi);
+
+    // a parole: quale buono spetta e quanto manca al prossimo
+    var prossimo = BUONI[presi];
+    riempi(colBuoni, frazione, presi / n,
+           (presi ? 'Spetta il buono da ' + BUONI[presi - 1].importo : 'Nessun buono ancora')
+           + (prossimo ? ', quello da ' + prossimo.importo + ' tra ' + fmtDurata(prossimo.perm - perm) : ''));
+  }
+
+  // segna quale buono spetta (i primi 'presi' sono raggiunti, conta l'ultimo)
+  function statoBuoni(presi){
+    BUONI.forEach(function(b, i){
+      var spetta = i === presi - 1, superato = i < presi - 1;
+      [b.ora, b.stato].forEach(function(e){
+        e.classList.toggle('spetta', spetta);
+        e.classList.toggle('superato', superato);
+      });
+      b.imp.title = spetta ? 'Ti spetta questo buono'
+                  : superato ? 'Sostituito dal buono da ' + BUONI[presi - 1].importo
+                  : '';
+    });
+    colBuoni.row.classList.toggle('preso', presi > 0);
   }
 
   // un campo vuoto non e un errore da segnalare, e solo un dato che manca
@@ -360,12 +454,11 @@
   function resetStato(msg){
     el('extra').className = 'v vuoto';
     el('extra').textContent = msg;
-    RIGHE.forEach(function(r){
-      r.stato.textContent = '—';
-      r.row.classList.remove('hit');
-      r.barra.classList.remove('hit');
-      riempi(r, 0, 'in attesa degli orari');
-    });
+    colTurno.stato.textContent = '—';
+    colTurno.row.classList.remove('hit');
+    BUONI.forEach(function(b){ b.val.textContent = '—'; });
+    statoBuoni(0);
+    COLONNE.forEach(function(r){ riempi(r, 0, 0, 'in attesa degli orari'); });
   }
 
   function calcola(){
@@ -388,12 +481,13 @@
     // senza ingresso non c'e nessun orario da proporre
     if(start === null){
       resetStato(attesaDi('ingresso'));
-      RIGHE.forEach(function(r){ r.ora.textContent = '--:--'; });
+      colTurno.ora.textContent = '--:--';
+      BUONI.forEach(function(b){ b.ora.textContent = '--:--'; });
       return;
     }
 
-    scriviOra(rigaTurno.ora, start + permTurno);
-    BUONI.forEach(function(b){ scriviOra(b.el.ora, start + b.perm); });
+    scriviOra(colTurno.ora, start + permTurno);
+    BUONI.forEach(function(b){ scriviOra(b.ora, start + b.perm); });
 
     if(end === null){
       resetStato(attesaDi('uscita'));
@@ -413,8 +507,8 @@
     el('extra').textContent = (extra > 0 ? '+' : extra < 0 ? '−' : '')
                             + fmtDurata(Math.abs(extra));
 
-    segna(rigaTurno, perm, permTurno);
-    BUONI.forEach(function(b){ segna(b.el, perm, b.perm); });
+    segna(colTurno, perm, permTurno);
+    segnaBuoni(perm);
   }
 
   document.addEventListener('input', calcola);

@@ -23,17 +23,34 @@ Si compilano tre cose:
   | **7:12** | 7:12 | 7:42 |
   | **Lunga** | 9:00 | 9:30 |
 
-Sotto, un riquadro aggiorna in tempo reale due righe:
+Sotto, un riquadro si aggiorna in tempo reale:
 
 1. **Lo straordinario**: `+H:mm` in verde se sei oltre il turno, `-H:mm` in
    arancione se sei sotto.
-2. **I tre traguardi**, uno per colonna: completare il turno, prendere il buono
-   da 5,60 EUR, prendere quello da 7,00 EUR. Ogni colonna mostra l'orario di
-   uscita che serve e quanto manca ad arrivarci (`tra H:mm`, oppure
+2. **Il turno**: l'orario di uscita che serve per completarlo, una barra che si
+   riempie dall'ingresso a quell'orario e quanto manca (`tra H:mm`, oppure
    `✓ raggiunto` e la colonna diventa verde).
+3. **Il buono pasto**: una sola barra, divisa da una tacca in un tratto uguale
+   per ogni buono. Sopra la fine di ogni tratto c'e l'orario di uscita che serve
+   per quel buono, sotto il suo importo e quanto manca. Ogni tratto si riempie in
+   proporzione al tempo tra un traguardo e il successivo; la parte gia
+   conquistata e verde.
+
+L'importo di ogni buono cambia aspetto in base allo stato:
+
+| Stato | Importo | Orario |
+|---|---|---|
+| Da raggiungere | con il contorno, grigio, accanto `tra H:mm` | normale |
+| Ti spetta (il piu alto raggiunto) | `✓` pieno, verde | verde |
+| Superato da uno piu alto | barrato | grigio |
+
+I buoni non si sommano: ne spetta uno solo, il piu alto raggiunto, quindi in
+verde c'e sempre al massimo un importo. Il titolo *Buono pasto* diventa verde
+appena ne hai maturato uno.
 
 Finche l'ingresso non c'e, gli orari restano visibili ma smorzati; lo stesso
-vale per i conteggi `tra ...` finche manca l'uscita.
+vale per i conteggi `tra ...` finche manca l'uscita. Gli importi restano sempre
+leggibili.
 
 Lo straordinario si conta sempre sul lavoro effettivo, mai sulla permanenza. Esempi
 con turno **Lunga** (9:00 di lavoro, 9:30 in sede) e ingresso `08:00`:
@@ -110,6 +127,7 @@ tema chiaro/scuro automatico, layout adatto anche al telefono.
 Per cambiare i numeri, in cima allo `<script>`:
 
 - `PAUSA` e `SOGLIA_PAUSA` - i 30 minuti di pausa e la soglia delle 6:30;
-- `BUONI` - soglie, importi e nomi dei buoni pasto, da cui si generano anche i
-  titoli delle colonne;
+- `BUONI` - soglie (in lavoro effettivo) e importi dei buoni pasto, dal piu basso
+  al piu alto; da qui si generano orari, importi, stati e tacche della barra, e
+  aggiungendo un buono la barra si divide da sola in un tratto in piu;
 - i turni sono i `value` dei radio `name="turno"` nel markup.
