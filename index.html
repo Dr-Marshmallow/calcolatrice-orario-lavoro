@@ -98,6 +98,9 @@
     background:none; border:0; border-radius:8px; padding:2px 8px; line-height:18px; cursor:pointer;
   }
   .now:hover{background:var(--bg)}
+  /* pallino verde: l'uscita segue l'ora corrente */
+  .now.live::before{content:''; display:inline-block; width:6px; height:6px; margin-right:5px;
+                    border-radius:50%; background:var(--ok); vertical-align:1px}
   .now:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
 
   .seg{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; background:var(--bg);
@@ -539,10 +542,51 @@
     }
   });
 
+  // ---- uscita in tempo reale ----
+  // Finche non la tocchi, l'uscita segue l'orologio: si aggiorna ogni
+  // AGGIORNA_USCITA minuti, allineata all'orologio (:00, :05, :10...), e ogni volta
+  // che torni sulla pagina, perche in una scheda in background il browser rallenta
+  // o sospende i timer. Se la cambi a mano per simulare un'altra uscita, smette di
+  // seguire l'ora; 'Adesso' la riporta all'ora corrente e la riaggancia.
+  var AGGIORNA_USCITA = 5;
+  var uscitaLive = true, timerUscita = null;
+
+  // il pallino verde sul tasto 'Adesso' dice che l'uscita sta seguendo l'ora
+  function seguiOra(si){
+    uscitaLive = si;
+    el('adesso').classList.toggle('live', si);
+    el('adesso').title = si ? "L'uscita segue l'ora corrente"
+                            : "Riporta l'uscita all'ora corrente e tienila aggiornata";
+  }
+
+  // non si scrive nel campo mentre lo stai usando: ci pensa il blur
+  function aggiornaUscita(){
+    if(!uscitaLive || document.activeElement === el('uscita')){ return; }
+    var v = oraCorrente();
+    if(el('uscita').value !== v){ el('uscita').value = v; calcola(); }
+  }
+
+  // il prossimo scatto cade sul prossimo multiplo di AGGIORNA_USCITA minuti
+  function programmaUscita(){
+    clearTimeout(timerUscita);
+    var d = new Date(), passo = AGGIORNA_USCITA * 60000;
+    var trascorso = ((d.getMinutes() * 60 + d.getSeconds()) * 1000 + d.getMilliseconds()) % passo;
+    timerUscita = setTimeout(function(){
+      if(!controllaGiorno()){ aggiornaUscita(); }
+      programmaUscita();
+    }, passo - trascorso + 50);  // un filo dopo lo scatto, per cadere nel minuto giusto
+  }
+
   el('adesso').addEventListener('click', function(){
+    seguiOra(true);
     el('uscita').value = oraCorrente();
     calcola();
   });
+
+  // solo le modifiche dell'utente generano questi eventi, non quelle dello script
+  el('uscita').addEventListener('input', function(){ seguiOra(false); });
+  el('uscita').addEventListener('change', function(){ seguiOra(false); });
+  el('uscita').addEventListener('blur', aggiornaUscita);
 
   // ---- ingresso di oggi ----
   // L'ingresso resta nel browser (localStorage) insieme alla data, cosi sopravvive
@@ -583,19 +627,27 @@
 
   // Una pagina rimasta aperta da ieri (tipico sul telefono) al ritorno riparte
   // come un'apertura nuova: ingresso di oggi se c'e, altrimenti vuoto, e uscita
-  // all'ora corrente
+  // all'ora corrente, di nuovo in tempo reale. Dice se ha ricominciato
   function controllaGiorno(){
-    if(giornoPagina === oggi()){ return; }
+    if(giornoPagina === oggi()){ return false; }
     giornoPagina = oggi();
     el('ingresso').value = '';
     ripristinaIngresso();
+    seguiOra(true);
     el('uscita').value = oraCorrente();
     calcola();
+    return true;
   }
-  document.addEventListener('visibilitychange', function(){
-    if(!document.hidden){ controllaGiorno(); }
-  });
-  window.addEventListener('pageshow', controllaGiorno);
+
+  // al ritorno sulla pagina: giorno nuovo, oppure uscita da rimettere in pari,
+  // e timer riallineato all'orologio
+  function alRitorno(){
+    if(document.hidden){ return; }
+    if(!controllaGiorno()){ aggiornaUscita(); }
+    programmaUscita();
+  }
+  document.addEventListener('visibilitychange', alRitorno);
+  window.addEventListener('pageshow', alRitorno);
 
   // ---- turno ----
   // L'ultimo turno scelto resta salvato finche non lo cambi, anche nei giorni
@@ -673,11 +725,14 @@
 
   aggiornaTastoTema();
 
-  // tornano l'ultimo turno e l'ingresso se e di oggi; l'uscita parte dall'ora corrente
+  // tornano l'ultimo turno e l'ingresso se e di oggi; l'uscita parte dall'ora
+  // corrente e la segue
   ripristinaTurno();
   ripristinaIngresso();
+  seguiOra(true);
   el('uscita').value = oraCorrente();
   calcola();
+  programmaUscita();
 })();
 </script>
 </body>
