@@ -13,9 +13,11 @@ Apri `index.html` in un browser: non serve altro, funziona anche offline.
 Si compilano tre cose:
 
 - **Ingresso** - vuoto all'apertura, la prima selezione parte dalle 8:00.
-- **Uscita** - preimpostata sull'ora corrente e aggiornata da sola ogni 5 minuti
-  (alle :00, :05, :10...) e ogni volta che torni sulla pagina; un pallino verde
-  sul pulsante *Adesso* dice che sta seguendo l'ora. Cambiandola a mano si simula
+- **Uscita** - preimpostata sull'ora corrente e aggiornata da sola 5 minuti dopo
+  l'ultimo aggiornamento, e ogni volta che torni sulla pagina. Accanto al pulsante
+  *Adesso* un piccolo cerchio si riempie fino al prossimo aggiornamento, e passandoci
+  sopra col mouse se ne legge l'orario; ogni aggiornamento, compreso il clic su
+  *Adesso*, lo fa ripartire da zero. Cambiandola a mano si simula
   un'uscita diversa e l'aggiornamento si ferma; *Adesso* la riporta all'ora
   corrente e lo riattiva.
 - **Turno** - quello che avresti dovuto fare:

@@ -98,9 +98,17 @@
     background:none; border:0; border-radius:8px; padding:2px 8px; line-height:18px; cursor:pointer;
   }
   .now:hover{background:var(--bg)}
-  /* pallino verde: l'uscita segue l'ora corrente */
-  .now.live::before{content:''; display:inline-block; width:6px; height:6px; margin-right:5px;
-                    border-radius:50%; background:var(--ok); vertical-align:1px}
+  /* cerchio di attesa: c'e solo mentre l'uscita segue l'ora corrente, e si riempie
+     in senso orario fino al prossimo aggiornamento automatico. L'animazione dura
+     un intero intervallo e riparte da vuota a ogni aggiornamento */
+  .now{display:inline-flex; align-items:center; gap:5px}
+  .giro{display:none; width:12px; height:12px; transform:rotate(-90deg)}
+  .now.live .giro{display:block}
+  .giro circle{fill:none; stroke-width:2.5}
+  .giro .fondo{stroke:var(--line)}
+  .giro .avanza{stroke:currentColor; stroke-dasharray:100; stroke-dashoffset:100}
+  .giro.va .avanza{animation:giro var(--durata) linear both}
+  @keyframes giro{ from{stroke-dashoffset:100} to{stroke-dashoffset:0} }
   .now:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
 
   .seg{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; background:var(--bg);
@@ -231,7 +239,11 @@
       <div class="field">
         <div class="head">
           <label for="uscita">Uscita</label>
-          <button type="button" class="now" id="adesso">Adesso</button>
+          <button type="button" class="now" id="adesso">
+            <svg class="giro" id="giro" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+              <circle class="fondo" cx="6" cy="6" r="4.75"/>
+              <circle class="avanza" cx="6" cy="6" r="4.75" pathLength="100"/>
+            </svg>Adesso</button>
         </div>
         <input type="time" id="uscita" step="60">
       </div>
@@ -543,20 +555,22 @@
   });
 
   // ---- uscita in tempo reale ----
-  // Finche non la tocchi, l'uscita segue l'orologio: si aggiorna ogni
-  // AGGIORNA_USCITA minuti, allineata all'orologio (:00, :05, :10...), e ogni volta
-  // che torni sulla pagina, perche in una scheda in background il browser rallenta
-  // o sospende i timer. Se la cambi a mano per simulare un'altra uscita, smette di
+  // Finche non la tocchi, l'uscita segue l'orologio: si aggiorna AGGIORNA_USCITA
+  // minuti dopo l'ultimo aggiornamento, e ogni volta che torni sulla pagina, perche
+  // in una scheda in background il browser rallenta o sospende i timer. Ogni
+  // aggiornamento (anche il clic su 'Adesso' o il ritorno sulla pagina) fa ripartire
+  // il conto da zero. Se la cambi a mano per simulare un'altra uscita, smette di
   // seguire l'ora; 'Adesso' la riporta all'ora corrente e la riaggancia.
   var AGGIORNA_USCITA = 5;
   var uscitaLive = true, timerUscita = null;
 
-  // il pallino verde sul tasto 'Adesso' dice che l'uscita sta seguendo l'ora
+  // il cerchio sul tasto 'Adesso' dice che l'uscita sta seguendo l'ora. Riattivandolo
+  // si riprogramma anche il timer, perche da nascosto il cerchio non avanza
   function seguiOra(si){
     uscitaLive = si;
     el('adesso').classList.toggle('live', si);
-    el('adesso').title = si ? "L'uscita segue l'ora corrente"
-                            : "Riporta l'uscita all'ora corrente e tienila aggiornata";
+    if(si){ programmaUscita(); }
+    else{ el('adesso').title = "Riporta l'uscita all'ora corrente e tienila aggiornata"; }
   }
 
   // non si scrive nel campo mentre lo stai usando: ci pensa il blur
@@ -567,14 +581,28 @@
   }
 
   // il prossimo scatto cade sul prossimo multiplo di AGGIORNA_USCITA minuti
+  // fa ripartire da zero il conto alla rovescia, e il cerchio con lui
   function programmaUscita(){
     clearTimeout(timerUscita);
-    var d = new Date(), passo = AGGIORNA_USCITA * 60000;
-    var trascorso = ((d.getMinutes() * 60 + d.getSeconds()) * 1000 + d.getMilliseconds()) % passo;
+    var passo = AGGIORNA_USCITA * 60000;
     timerUscita = setTimeout(function(){
       if(!controllaGiorno()){ aggiornaUscita(); }
       programmaUscita();
-    }, passo - trascorso + 50);  // un filo dopo lo scatto, per cadere nel minuto giusto
+    }, passo);
+
+    // togliere e rimettere la classe, con un ricalcolo del layout in mezzo,
+    // fa ricominciare l'animazione da vuota
+    var giro = el('giro');
+    giro.style.setProperty('--durata', passo + 'ms');
+    giro.classList.remove('va');
+    giro.getBoundingClientRect();
+    giro.classList.add('va');
+
+    if(uscitaLive){
+      var p = new Date(Date.now() + passo);
+      el('adesso').title = "L'uscita segue l'ora corrente: prossimo aggiornamento alle "
+                         + pad(p.getHours()) + ':' + pad(p.getMinutes());
+    }
   }
 
   el('adesso').addEventListener('click', function(){
@@ -729,10 +757,9 @@
   // corrente e la segue
   ripristinaTurno();
   ripristinaIngresso();
-  seguiOra(true);
+  seguiOra(true);  // fa partire anche il timer
   el('uscita').value = oraCorrente();
   calcola();
-  programmaUscita();
 })();
 </script>
 </body>
